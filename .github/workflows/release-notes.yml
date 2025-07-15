@@ -65,12 +65,20 @@ jobs:
         JIRA_FETCH_COMMITS_DATE: ${{ github.event.inputs.date }}
         OUTPUT_DIR: ./output
       run: |
-        echo "Generating release notes..."
+        echo "🚀 Generating release notes..."
+        echo "📊 Configuration:"
+        echo "  Sprint: ${{ github.event.inputs.sprint_number || secrets.DEFAULT_SPRINT_NUMBER || 'current' }}"
+        echo "  Date: ${{ github.event.inputs.date || 'current' }}"
+        echo "  Output: ${{ github.event.inputs.output || 'both' }}"
+        echo "  Teams Notification: ${{ github.event.inputs.notify_teams || 'true' }}"
+        
         npm run start -- create_release_workflow \
-          --sprintNumber="${{ github.event.inputs.sprint_number || secrets.DEFAULT_SPRINT_NUMBER }}" \
+          --sprintNumber="${{ github.event.inputs.sprint_number || secrets.DEFAULT_SPRINT_NUMBER || 'current' }}" \
           --date="${{ github.event.inputs.date }}" \
           --output="${{ github.event.inputs.output || 'both' }}" \
           --notifyTeams="${{ github.event.inputs.notify_teams || 'true' }}"
+          
+        echo "✅ Release notes generation completed"
           
     - name: Upload release notes artifacts
       uses: actions/upload-artifact@v4

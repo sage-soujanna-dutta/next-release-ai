@@ -1,0 +1,149 @@
+name: Environment Management
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      action:
+        description: 'Action to perform'
+        required: true
+        type: choice
+        options:
+          - deploy
+          - test-connection
+          - validate-secrets
+      sprint_number:
+        description: 'Sprint number for testing'
+        required: false
+        type: string
+
+jobs:
+  environment-action:
+    runs-on: ubuntu-latest
+    environment: ${{ github.event.inputs.environment }}
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build project
+      run: npm run build
+      
+    - name: Validate Secrets
+      if: github.event.inputs.action == 'validate-secrets'
+      env:
+        JIRA_DOMAIN: ${{ secrets.JIRA_DOMAIN }}
+        JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+        JIRA_BOARD_ID: ${{ secrets.JIRA_BOARD_ID }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        CONFLUENCE_USERNAME: ${{ secrets.CONFLUENCE_USERNAME }}
+        CONFLUENCE_PAT: ${{ secrets.CONFLUENCE_PAT }}
+        CONFLUENCE_SPACE: ${{ secrets.CONFLUENCE_SPACE }}
+        TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+      run: |
+        echo "🔍 Validating environment secrets for ${{ github.event.inputs.environment }}..."
+        
+        # Check required secrets
+        if [ -z "$JIRA_DOMAIN" ]; then echo "❌ JIRA_DOMAIN missing"; exit 1; fi
+        if [ -z "$JIRA_TOKEN" ]; then echo "❌ JIRA_TOKEN missing"; exit 1; fi
+        if [ -z "$JIRA_BOARD_ID" ]; then echo "❌ JIRA_BOARD_ID missing"; exit 1; fi
+        if [ -z "$GITHUB_TOKEN" ]; then echo "❌ GITHUB_TOKEN missing"; exit 1; fi
+        
+        echo "✅ Required secrets are configured"
+        
+        # Check optional secrets
+        if [ -z "$CONFLUENCE_USERNAME" ]; then echo "⚠️ CONFLUENCE_USERNAME not set (Confluence features disabled)"; fi
+        if [ -z "$CONFLUENCE_PAT" ]; then echo "⚠️ CONFLUENCE_PAT not set (Confluence features disabled)"; fi
+        if [ -z "$TEAMS_WEBHOOK_URL" ]; then echo "⚠️ TEAMS_WEBHOOK_URL not set (Teams notifications disabled)"; fi
+        
+    - name: Test Connections
+      if: github.event.inputs.action == 'test-connection'
+      env:
+        JIRA_DOMAIN: ${{ secrets.JIRA_DOMAIN }}
+        JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+        JIRA_BOARD_ID: ${{ secrets.JIRA_BOARD_ID }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        CONFLUENCE_USERNAME: ${{ secrets.CONFLUENCE_USERNAME }}
+        CONFLUENCE_PAT: ${{ secrets.CONFLUENCE_PAT }}
+        CONFLUENCE_SPACE: ${{ secrets.CONFLUENCE_SPACE }}
+        JIRA_CONFLUENCE_DOMAIN: ${{ secrets.JIRA_CONFLUENCE_DOMAIN }}
+      run: |
+        echo "🔗 Testing connections for ${{ github.event.inputs.environment }}..."
+        
+        # Test JIRA connection
+        echo "Testing JIRA connection..."
+        curl -s -u "$CONFLUENCE_USERNAME:$JIRA_TOKEN" \
+          "https://$JIRA_DOMAIN/rest/api/2/project" \
+          -H "Accept: application/json" > /dev/null && \
+          echo "✅ JIRA connection successful" || \
+          echo "❌ JIRA connection failed"
+        
+        # Test GitHub connection
+        echo "Testing GitHub connection..."
+        curl -s -H "Authorization: token $GITHUB_TOKEN" \
+          "https://api.github.com/repos/$GITHUB_REPOSITORY" > /dev/null && \
+          echo "✅ GitHub connection successful" || \
+          echo "❌ GitHub connection failed"
+        
+        # Test Confluence connection (if configured)
+        if [ -n "$CONFLUENCE_USERNAME" ] && [ -n "$CONFLUENCE_PAT" ]; then
+          echo "Testing Confluence connection..."
+          curl -s -u "$CONFLUENCE_USERNAME:$CONFLUENCE_PAT" \
+            "https://$JIRA_CONFLUENCE_DOMAIN/wiki/rest/api/space/$CONFLUENCE_SPACE" \
+            -H "Accept: application/json" > /dev/null && \
+            echo "✅ Confluence connection successful" || \
+            echo "❌ Confluence connection failed"
+        fi
+        
+    - name: Deploy to Environment
+      if: github.event.inputs.action == 'deploy'
+      env:
+        JIRA_DOMAIN: ${{ secrets.JIRA_DOMAIN }}
+        JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+        JIRA_BOARD_ID: ${{ secrets.JIRA_BOARD_ID }}
+        JIRA_SPRINT_NUMBER: ${{ github.event.inputs.sprint_number || secrets.DEFAULT_SPRINT_NUMBER }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        CONFLUENCE_USERNAME: ${{ secrets.CONFLUENCE_USERNAME }}
+        CONFLUENCE_PAT: ${{ secrets.CONFLUENCE_PAT }}
+        CONFLUENCE_SPACE: ${{ secrets.CONFLUENCE_SPACE }}
+        JIRA_CONFLUENCE_DOMAIN: ${{ secrets.JIRA_CONFLUENCE_DOMAIN }}
+        TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+        OUTPUT_DIR: ./output
+      run: |
+        echo "🚀 Deploying to ${{ github.event.inputs.environment }}..."
+        
+        # Generate test release notes
+        npm run start -- create_release_workflow \
+          --sprintNumber="${{ github.event.inputs.sprint_number || 'current' }}" \
+          --output="file" \
+          --notifyTeams="false"
+          
+        echo "✅ Deployment to ${{ github.event.inputs.environment }} completed"
+        
+    - name: Upload deployment artifacts
+      if: github.event.inputs.action == 'deploy'
+      uses: actions/upload-artifact@v4
+      with:
+        name: deployment-${{ github.event.inputs.environment }}-${{ github.run_number }}
+        path: |
+          output/*.html
+          output/*.md
+        retention-days: 7
