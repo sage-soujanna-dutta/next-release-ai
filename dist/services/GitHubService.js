@@ -43,20 +43,45 @@ export class GitHubService {
             // Make end date exclusive by subtracting one day
             const exclusiveEndDate = dayjs(endDate).subtract(1, 'day').endOf('day').toISOString();
             console.log(`📅 Fetching commits from ${startDate} to ${endDate} (exclusive end date: ${exclusiveEndDate})`);
-            const response = await axios.get(`https://api.github.com/repos/${this.repository}/commits?since=${startDate}&until=${exclusiveEndDate}`, {
-                headers: {
-                    Authorization: `token ${this.token}`,
-                    Accept: "application/vnd.github+json",
-                    "X-GitHub-Api-Version": "2022-11-28",
-                },
-            });
-            return response.data.map((commit) => ({
-                sha: commit.sha,
-                message: commit.commit.message,
-                url: commit.html_url,
-                author: commit.commit.author.name || commit.author?.login || "Unknown",
-                date: commit.commit.author.date,
-            }));
+            let allCommits = [];
+            let page = 1;
+            let hasMore = true;
+            const perPage = 100; // GitHub's max per page
+            while (hasMore) {
+                const response = await axios.get(`https://api.github.com/repos/${this.repository}/commits`, {
+                    headers: {
+                        Authorization: `token ${this.token}`,
+                        Accept: "application/vnd.github+json",
+                        "X-GitHub-Api-Version": "2022-11-28",
+                    },
+                    params: {
+                        since: startDate,
+                        until: exclusiveEndDate,
+                        page,
+                        per_page: perPage,
+                    }
+                });
+                const commits = response.data.map((commit) => ({
+                    sha: commit.sha,
+                    message: commit.commit.message,
+                    url: commit.html_url,
+                    author: commit.commit.author.name || commit.author?.login || "Unknown",
+                    date: commit.commit.author.date,
+                }));
+                allCommits = allCommits.concat(commits);
+                // Check if there are more pages using Link header
+                const linkHeader = response.headers.link;
+                hasMore = linkHeader && linkHeader.includes('rel="next"');
+                page++;
+                console.log(`📄 Fetched ${commits.length} commits on page ${page - 1} (total so far: ${allCommits.length})`);
+                // Safeguard against infinite loops
+                if (page > 50) {
+                    console.warn('⚠️ Reached maximum page limit (50), stopping pagination');
+                    break;
+                }
+            }
+            console.log(`✅ Fetched all ${allCommits.length} commits for date range`);
+            return allCommits;
         }
         catch (error) {
             console.error("Error fetching GitHub commits for date range:", error);

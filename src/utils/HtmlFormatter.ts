@@ -15,6 +15,8 @@ export class HtmlFormatter {
     const commitsContent = this.formatCommits(commits);
     const summary = this.generateSummary(jiraIssues, commits, sprintTitle);
     const detailedStats = this.generateDetailedStats(jiraIssues, commits);
+    const aiSummary = this.generateAISummary(jiraIssues, commits, sprintTitle);
+    const conclusion = this.generateConclusion(jiraIssues, commits, sprintTitle);
 
     return `
 <!DOCTYPE html>
@@ -40,8 +42,10 @@ export class HtmlFormatter {
             </div>
         </header>
         
+        ${aiSummary}
         ${summary}
         ${detailedStats}
+        ${conclusion}
         ${jiraContent}
         ${commitsContent}
         
@@ -49,7 +53,7 @@ export class HtmlFormatter {
             <div class="footer-content">
                 <p><i class="fas fa-cog"></i> Generated automatically by Release MCP Server</p>
                 <p><i class="fas fa-code-branch"></i> Repository: Sage/sage-connect</p>
-                <p><i class="fas fa-jira"></i> JIRA Board: 6335</p>
+                <p><i class="fas fa-jira"></i> JIRA Board: ${process.env.JIRA_BOARD_ID || '6306'}</p>
             </div>
         </footer>
     </div>
@@ -73,6 +77,22 @@ export class HtmlFormatter {
                     });
                 });
             });
+            
+            // Animate stat numbers
+            const statNumbers = document.querySelectorAll('.stat-number');
+            statNumbers.forEach(stat => {
+                const finalValue = parseInt(stat.textContent);
+                let currentValue = 0;
+                const increment = finalValue / 30;
+                const timer = setInterval(() => {
+                    currentValue += increment;
+                    if (currentValue >= finalValue) {
+                        currentValue = finalValue;
+                        clearInterval(timer);
+                    }
+                    stat.textContent = Math.floor(currentValue);
+                }, 50);
+            });
         });
     </script>
 </body>
@@ -85,12 +105,28 @@ export class HtmlFormatter {
     const jiraContent = this.formatJiraIssuesForConfluence(jiraIssues);
     const commitsContent = this.formatCommitsForConfluence(commits);
     const summary = this.generateSummaryForConfluence(jiraIssues, commits, sprintTitle);
+    const aiSummary = this.generateAISummaryForConfluence(jiraIssues, commits, sprintTitle);
+    const conclusion = this.generateConclusionForConfluence(jiraIssues, commits, sprintTitle);
 
     return `
+<div class="release-notes-confluence">
 <h1>🚀 ${sprintTitle} - Release Notes</h1>
 
-<p><strong>Generated on:</strong> ${new Date().toLocaleString()}</p>
-<p><strong>Project:</strong> Sage Connect Project</p>
+<div class="header-info">
+<p><strong>📅 Generated on:</strong> ${new Date().toLocaleString()}</p>
+<p><strong>🎯 Project:</strong> Sage Connect</p>
+<p><strong>📊 Sprint Summary:</strong> ${jiraIssues.length} issues • ${commits.length} commits • ${jiraIssues.filter(i => i.fields.status.name === 'Done').length} completed</p>
+</div>
+
+<ac:structured-macro ac:name="panel" ac:schema-version="1">
+<ac:parameter ac:name="bgColor">#E8F5FF</ac:parameter>
+<ac:parameter ac:name="titleBGColor">#3C86F4</ac:parameter>
+<ac:parameter ac:name="titleColor">#FFFFFF</ac:parameter>
+<ac:parameter ac:name="title">🤖 AI-Generated Sprint Insights</ac:parameter>
+<ac:rich-text-body>
+${aiSummary}
+</ac:rich-text-body>
+</ac:structured-macro>
 
 <hr/>
 
@@ -106,7 +142,21 @@ ${commitsContent}
 
 <hr/>
 
-<p><em>Generated automatically by Release MCP Server</em></p>
+<ac:structured-macro ac:name="panel" ac:schema-version="1">
+<ac:parameter ac:name="bgColor">#F0F0FF</ac:parameter>
+<ac:parameter ac:name="titleBGColor">#7D4CFF</ac:parameter>
+<ac:parameter ac:name="titleColor">#FFFFFF</ac:parameter>
+<ac:parameter ac:name="title">🎯 Sprint Conclusion & Next Steps</ac:parameter>
+<ac:rich-text-body>
+${conclusion}
+</ac:rich-text-body>
+</ac:structured-macro>
+
+<div class="footer-info">
+<p><em>🤖 Generated automatically by Release MCP Server</em></p>
+<p><em>📊 Repository: Sage/sage-connect • 📋 JIRA Board: ${process.env.JIRA_BOARD_ID || '6306'}</em></p>
+</div>
+</div>
 `;
   }
 
@@ -179,6 +229,7 @@ ${commitsContent}
   private generateSummaryForConfluence(jiraIssues: JiraIssue[], commits: GitHubCommit[], sprintTitle: string): string {
     const totalIssues = jiraIssues.length;
     const totalCommits = commits.length;
+    const completedIssues = jiraIssues.filter(i => i.fields.status.name === 'Done').length;
     
     const issuesByType = jiraIssues.reduce((acc, issue) => {
       const type = issue.fields.issuetype.name;
@@ -192,54 +243,78 @@ ${commitsContent}
       return acc;
     }, {} as Record<string, number>);
 
+    // Calculate contributors from commits
+    const contributors = [...new Set(commits.map(c => c.author))];
+
     let summary = `
 <h2>📊 Release Summary</h2>
 
 <table>
   <tr>
-    <th>Metric</th>
-    <th>Count</th>
+    <th style="width: 60%; text-align: left;">📋 Metric</th>
+    <th style="width: 25%; text-align: center;">📈 Count</th>
+    <th style="width: 15%; text-align: center;">📊 %</th>
   </tr>
   <tr>
-    <td><strong>Total JIRA Issues</strong></td>
-    <td>${totalIssues}</td>
+    <td>🎯 <strong>Total JIRA Issues</strong></td>
+    <td style="text-align: center; font-weight: bold; color: #2684FF;">${totalIssues}</td>
+    <td style="text-align: center;">100%</td>
   </tr>
   <tr>
-    <td><strong>Total Commits</strong></td>
-    <td>${totalCommits}</td>
+    <td>✅ <strong>Completed Issues</strong></td>
+    <td style="text-align: center; font-weight: bold; color: #00875A;">${completedIssues}</td>
+    <td style="text-align: center;">${totalIssues > 0 ? Math.round((completedIssues / totalIssues) * 100) : 0}%</td>
+  </tr>
+  <tr>
+    <td>💻 <strong>Total Commits</strong></td>
+    <td style="text-align: center; font-weight: bold; color: #6554C0;">${totalCommits}</td>
+    <td style="text-align: center;">-</td>
+  </tr>
+  <tr>
+    <td>👥 <strong>Contributors</strong></td>
+    <td style="text-align: center; font-weight: bold; color: #FF5630;">${contributors.length}</td>
+    <td style="text-align: center;">-</td>
   </tr>
 </table>
 
-<h3>Issues by Type</h3>
+<h3>🏷️ Issues by Type</h3>
 <table>
   <tr>
-    <th>Type</th>
-    <th>Count</th>
+    <th style="width: 60%; text-align: left;">📝 Issue Type</th>
+    <th style="width: 25%; text-align: center;">📊 Count</th>
+    <th style="width: 15%; text-align: center;">📈 Percentage</th>
   </tr>`;
 
     for (const [type, count] of Object.entries(issuesByType)) {
+      const percentage = totalIssues > 0 ? Math.round((count / totalIssues) * 100) : 0;
+      const typeIcon = this.getIssueTypeIconForConfluence(type);
       summary += `
   <tr>
-    <td>${type}</td>
-    <td>${count}</td>
+    <td>${typeIcon} <strong>${type}</strong></td>
+    <td style="text-align: center; font-weight: bold;">${count}</td>
+    <td style="text-align: center;">${percentage}%</td>
   </tr>`;
     }
 
     summary += `
 </table>
 
-<h3>Issues by Status</h3>
+<h3>🚦 Issues by Status</h3>
 <table>
   <tr>
-    <th>Status</th>
-    <th>Count</th>
+    <th style="width: 60%; text-align: left;">🏃 Status</th>
+    <th style="width: 25%; text-align: center;">📊 Count</th>
+    <th style="width: 15%; text-align: center;">📈 Percentage</th>
   </tr>`;
 
     for (const [status, count] of Object.entries(issuesByStatus)) {
+      const percentage = totalIssues > 0 ? Math.round((count / totalIssues) * 100) : 0;
+      const statusIcon = this.getStatusIconForConfluence(status);
       summary += `
   <tr>
-    <td>${status}</td>
-    <td>${count}</td>
+    <td>${statusIcon} <strong>${status}</strong></td>
+    <td style="text-align: center; font-weight: bold;">${count}</td>
+    <td style="text-align: center;">${percentage}%</td>
   </tr>`;
     }
 
@@ -254,16 +329,40 @@ ${commitsContent}
       return '<section class="section"><h2>📋 JIRA Issues</h2><p class="no-items">No JIRA issues found for this release.</p></section>';
     }
 
-    const groupedIssues = this.groupIssuesByType(issues);
+    const groupedByComponent = this.groupIssuesByComponent(issues);
     
-    let content = '<section class="section"><h2>📋 JIRA Issues</h2>';
+    let content = `
+    <section class="section">
+        <h2>📋 JIRA Issues</h2>
+        <div class="issues-overview">
+            <p class="section-subtitle">Issues organized by component and type for better visibility</p>
+        </div>
+    `;
     
-    Object.entries(groupedIssues).forEach(([type, typeIssues]) => {
+    Object.entries(groupedByComponent).forEach(([component, componentIssues]) => {
+      const issuesByType = this.groupIssuesByType(componentIssues);
+      
       content += `
-        <div class="issue-type-section">
-            <h3>${this.getIssueTypeIcon(type)} ${type}s</h3>
-            <div class="issues-list">
-                ${typeIssues.map(issue => this.formatJiraIssue(issue)).join('')}
+        <div class="component-section">
+            <div class="component-header">
+                <h3><i class="fas fa-cube"></i> ${component}</h3>
+                <span class="component-count">${componentIssues.length} issue${componentIssues.length !== 1 ? 's' : ''}</span>
+            </div>
+            
+            <div class="issues-by-type">
+                ${Object.entries(issuesByType).map(([type, typeIssues]) => `
+                    <div class="issue-type-group">
+                        <div class="type-header">
+                            <span class="type-icon">${this.getIssueTypeIcon(type)}</span>
+                            <span class="type-name">${type}s</span>
+                            <span class="type-count">${typeIssues.length}</span>
+                        </div>
+                        
+                        <div class="issues-list">
+                            ${typeIssues.map(issue => this.formatJiraIssueCard(issue)).join('')}
+                        </div>
+                    </div>
+                `).join('')}
             </div>
         </div>
       `;
@@ -293,36 +392,36 @@ ${commitsContent}
 
     for (const [type, typeIssues] of Object.entries(issuesByType)) {
       content += `
-<h3>${this.getIssueTypeIconForConfluence(type)} ${type} (${typeIssues.length})</h3>
+<h3>${this.getIssueTypeIconForConfluence(type)} ${type} Issues (${typeIssues.length})</h3>
 
 <table>
   <tr>
-    <th>Key</th>
-    <th>Summary</th>
-    <th>Status</th>
-    <th>Assignee</th>
-    <th>Priority</th>
+    <th style="width: 15%; text-align: left;">🔑 Key</th>
+    <th style="width: 40%; text-align: left;">📝 Summary</th>
+    <th style="width: 15%; text-align: center;">🚦 Status</th>
+    <th style="width: 15%; text-align: center;">👤 Assignee</th>
+    <th style="width: 15%; text-align: center;">⚡ Priority</th>
   </tr>`;
 
       for (const issue of typeIssues) {
         const status = issue.fields.status.name;
         const priority = issue.fields.priority?.name || 'Not Set';
         const assignee = issue.fields.assignee?.displayName || 'Unassigned';
-        const statusColor = this.getStatusColorForConfluence(status);
+        const statusIcon = this.getStatusIconForConfluence(status);
         const priorityIcon = this.getPriorityIconForConfluence(priority);
         const issueUrl = `https://${process.env.JIRA_DOMAIN}/browse/${issue.key}`;
         
         content += `
   <tr>
-    <td><a href="${issueUrl}">${issue.key}</a></td>
+    <td><strong><a href="${issueUrl}">${issue.key}</a></strong></td>
     <td>${issue.fields.summary}</td>
-    <td><span style="background-color: ${statusColor}; padding: 2px 6px; border-radius: 4px; color: white; font-size: 12px;">${status}</span></td>
-    <td>${assignee}</td>
-    <td>${priorityIcon} ${priority}</td>
+    <td style="text-align: center;">${statusIcon} <strong>${status}</strong></td>
+    <td style="text-align: center;">👤 ${assignee}</td>
+    <td style="text-align: center;">${priorityIcon} <strong>${priority}</strong></td>
   </tr>`;
       }
 
-      content += `</table>`;
+      content += `</table><br/>`;
     }
 
     return content;
@@ -374,7 +473,10 @@ ${commitsContent}
                 <div class="stats-column full-width">
                     <h3><i class="fas fa-users"></i> Top Contributors</h3>
                     <div class="contributors-chart">
-                        ${Object.entries(authorCounts).slice(0, 5).map(([author, count]) => `
+                        ${Object.entries(authorCounts)
+                            .sort(([,a], [,b]) => (b as number) - (a as number))
+                            .slice(0, 5)
+                            .map(([author, count]) => `
                             <div class="contributor-item">
                                 <div class="contributor-avatar">
                                     <i class="fas fa-user"></i>
@@ -403,20 +505,82 @@ ${commitsContent}
     return `
         <section class="section">
             <h2>📦 Commits</h2>
+            <div class="commits-overview">
+                <p class="section-subtitle">Recent development activity and code changes</p>
+                <div class="commits-stats">
+                    <span class="commit-stat">
+                        <i class="fas fa-code-branch"></i>
+                        ${commits.length} total commits
+                    </span>
+                    <span class="commit-stat">
+                        <i class="fas fa-users"></i>
+                        ${new Set(commits.map(c => c.author).filter(author => author && author !== 'Unknown')).size} contributors
+                    </span>
+                </div>
+            </div>
+            
             <div class="commits-list">
-                ${commits.map(commit => `
-                    <div class="commit-item">
-                        <div class="commit-header">
-                            <span class="commit-sha">${commit.sha.substring(0, 8)}</span>
-                            <span class="commit-author">${commit.author}</span>
-                            <span class="commit-date">${new Date(commit.date).toLocaleDateString()}</span>
-                        </div>
-                        <div class="commit-message">${commit.message}</div>
-                    </div>
-                `).join('')}
+                ${commits.map(commit => this.formatCommitCard(commit)).join('')}
             </div>
         </section>
     `;
+  }
+
+  private formatCommitCard(commit: GitHubCommit): string {
+    const commitDate = new Date(commit.date);
+    const timeAgo = this.getTimeAgo(commitDate);
+    
+    return `
+        <div class="commit-card">
+            <div class="commit-card-header">
+                <div class="commit-meta">
+                    <a href="${commit.url}" class="commit-sha" target="_blank">
+                        <i class="fas fa-code"></i>
+                        ${commit.sha.substring(0, 8)}
+                    </a>
+                    <span class="commit-date">
+                        <i class="fas fa-clock"></i>
+                        ${timeAgo}
+                    </span>
+                    <span class="commit-author">
+                        <i class="fas fa-user-circle"></i>
+                        ${commit.author}
+                    </span>
+                </div>
+            </div>
+            
+            <div class="commit-card-body">
+                <p class="commit-message">${this.formatCommitMessage(commit.message)}</p>
+            </div>
+        </div>
+    `;
+  }
+
+  private getTimeAgo(date: Date): string {
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor(diffMs / (1000 * 60));
+
+    if (diffDays > 0) {
+      return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+    } else if (diffHours > 0) {
+      return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    } else if (diffMinutes > 0) {
+      return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`;
+    } else {
+      return 'Just now';
+    }
+  }
+
+  private formatCommitMessage(message: string): string {
+    // Truncate long commit messages and add ellipsis
+    const maxLength = 120;
+    if (message.length > maxLength) {
+      return message.substring(0, maxLength) + '...';
+    }
+    return message;
   }
 
   private formatCommitsForConfluence(commits: GitHubCommit[]): string {
@@ -426,35 +590,69 @@ ${commitsContent}
 <p><em>No recent commits found for this release.</em></p>`;
     }
 
-    let content = `
-<h2>💻 Recent Commits (${commits.length} total)</h2>
-<p><em>Commits from the last 8 days</em></p>
+    // Group commits by author for better organization
+    const commitsByAuthor = commits.reduce((acc, commit) => {
+      if (!acc[commit.author]) {
+        acc[commit.author] = [];
+      }
+      acc[commit.author].push(commit);
+      return acc;
+    }, {} as Record<string, GitHubCommit[]>);
 
+    const authors = Object.keys(commitsByAuthor);
+    const displayCommits = commits.slice(0, 25); // Limit for better performance
+
+    let content = `
+<h2>💻 Recent Commits (${commits.length} total, ${authors.length} contributors)</h2>
+
+<h3>👥 Contributor Summary</h3>
 <table>
   <tr>
-    <th>SHA</th>
-    <th>Message</th>
-    <th>Author</th>
-    <th>Date</th>
+    <th style="width: 60%; text-align: left;">👤 Developer</th>
+    <th style="width: 25%; text-align: center;">📊 Commits</th>
+    <th style="width: 15%; text-align: center;">📈 %</th>
   </tr>`;
 
-    for (const commit of commits.slice(0, 20)) { // Limit to 20 commits for readability
+    for (const [author, authorCommits] of Object.entries(commitsByAuthor)) {
+      const percentage = Math.round((authorCommits.length / commits.length) * 100);
+      content += `
+  <tr>
+    <td>👨‍💻 <strong>${author}</strong></td>
+    <td style="text-align: center; font-weight: bold;">${authorCommits.length}</td>
+    <td style="text-align: center;">${percentage}%</td>
+  </tr>`;
+    }
+
+    content += `
+</table>
+
+<h3>📝 Commit Details</h3>
+<table>
+  <tr>
+    <th style="width: 15%; text-align: left;">🔗 SHA</th>
+    <th style="width: 45%; text-align: left;">💬 Message</th>
+    <th style="width: 25%; text-align: center;">👤 Author</th>
+    <th style="width: 15%; text-align: center;">📅 Date</th>
+  </tr>`;
+
+    for (const commit of displayCommits) {
       const shortSha = commit.sha.substring(0, 8);
       const date = new Date(commit.date).toLocaleDateString();
+      const repoUrl = `https://github.com/${process.env.GITHUB_REPOSITORY}/commit/${commit.sha}`;
       
       content += `
   <tr>
-    <td><code>${shortSha}</code></td>
+    <td><strong><a href="${repoUrl}">${shortSha}</a></strong></td>
     <td>${commit.message}</td>
-    <td>${commit.author}</td>
-    <td>${date}</td>
+    <td style="text-align: center;">👨‍💻 ${commit.author}</td>
+    <td style="text-align: center;">📅 ${date}</td>
   </tr>`;
     }
 
     content += `</table>`;
 
-    if (commits.length > 20) {
-      content += `<p><em>... and ${commits.length - 20} more commits</em></p>`;
+    if (commits.length > 25) {
+      content += `<p><em>📊 Showing first 25 commits out of ${commits.length} total commits in this sprint.</em></p>`;
     }
 
     return content;
@@ -478,6 +676,41 @@ ${commitsContent}
     `;
   }
 
+  private formatJiraIssueCard(issue: JiraIssue): string {
+    const statusClass = this.getStatusClass(issue.fields.status.name);
+    const priorityIcon = this.getPriorityIcon(issue.fields.priority?.name);
+    
+    return `
+        <div class="issue-card">
+            <div class="issue-card-header">
+                <div class="issue-key-group">
+                    <a href="https://${process.env.JIRA_DOMAIN}/browse/${issue.key}" 
+                       class="issue-key-link" target="_blank">
+                        ${issue.key}
+                    </a>
+                    ${priorityIcon ? `<span class="priority-badge">${priorityIcon}</span>` : ''}
+                </div>
+                <span class="issue-status-badge ${statusClass}">${issue.fields.status.name}</span>
+            </div>
+            
+            <div class="issue-card-body">
+                <h4 class="issue-title">${issue.fields.summary}</h4>
+                ${issue.fields.assignee ? `
+                    <div class="issue-assignee">
+                        <i class="fas fa-user"></i>
+                        <span>${issue.fields.assignee.displayName}</span>
+                    </div>
+                ` : `
+                    <div class="issue-assignee unassigned">
+                        <i class="fas fa-user-slash"></i>
+                        <span>Unassigned</span>
+                    </div>
+                `}
+            </div>
+        </div>
+    `;
+  }
+
   private groupIssuesByType(issues: JiraIssue[]): Record<string, JiraIssue[]> {
     return issues.reduce((groups, issue) => {
       const type = issue.fields.issuetype.name;
@@ -485,6 +718,20 @@ ${commitsContent}
         groups[type] = [];
       }
       groups[type].push(issue);
+      return groups;
+    }, {} as Record<string, JiraIssue[]>);
+  }
+
+  private groupIssuesByComponent(issues: JiraIssue[]): Record<string, JiraIssue[]> {
+    return issues.reduce((groups, issue) => {
+      const component = issue.fields.components && issue.fields.components.length > 0 
+        ? issue.fields.components[0].name 
+        : 'No Component';
+      
+      if (!groups[component]) {
+        groups[component] = [];
+      }
+      groups[component].push(issue);
       return groups;
     }, {} as Record<string, JiraIssue[]>);
   }
@@ -572,8 +819,8 @@ ${commitsContent}
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             line-height: 1.6;
-            color: #333;
-            background: #f8fafc;
+            color: #FFFFFF;
+            background: linear-gradient(135deg, #0A0A0A 0%, #000000 100%);
         }
         
         .container {
@@ -586,12 +833,13 @@ ${commitsContent}
             text-align: center;
             margin-bottom: 3rem;
             padding: 3rem 2rem;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #00DC64 0%, #7D4CFF 100%);
             color: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0,220,100,0.3);
             position: relative;
             overflow: hidden;
+            border: 2px solid #00DC64;
         }
         
         .header::before {
@@ -611,10 +859,14 @@ ${commitsContent}
         }
         
         .header h1 {
-            font-size: 3rem;
+            font-size: 3.5rem;
             margin-bottom: 1rem;
-            font-weight: 800;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-weight: 900;
+            text-shadow: 2px 2px 8px rgba(0,0,0,0.5);
+            background: linear-gradient(45deg, #FFFFFF, #00DC64);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
         
         .header-meta {
@@ -626,11 +878,12 @@ ${commitsContent}
         }
         
         .header-meta p {
-            background: rgba(255,255,255,0.2);
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-            backdrop-filter: blur(10px);
+            background: rgba(0,220,100,0.3);
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            backdrop-filter: blur(15px);
             margin: 0;
+            border: 1px solid rgba(0,220,100,0.5);
         }
         
         .date, .project {
@@ -640,29 +893,45 @@ ${commitsContent}
         }
         
         .section {
-            background: white;
+            background: linear-gradient(145deg, #1a1a1a, #0A0A0A);
             margin-bottom: 2rem;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            border: 1px solid #e2e8f0;
+            padding: 2.5rem;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            border: 1px solid #333333;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #00DC64, #7D4CFF);
         }
         
         .section h2 {
-            font-size: 1.8rem;
-            margin-bottom: 1.5rem;
-            color: #2d3748;
-            border-bottom: 3px solid #667eea;
-            padding-bottom: 0.5rem;
+            font-size: 2rem;
+            margin-bottom: 2rem;
+            color: #FFFFFF;
+            border-bottom: 3px solid #00DC64;
+            padding-bottom: 0.75rem;
+            font-weight: 700;
         }
         
         .summary {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            background: linear-gradient(135deg, #000000 0%, #00DC64 50%, #7D4CFF 100%);
             color: white;
             margin-bottom: 2rem;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            padding: 3rem;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(0,220,100,0.4);
+            border: 2px solid #00DC64;
+            position: relative;
+            overflow: hidden;
         }
         
         .summary h2 {
@@ -678,33 +947,69 @@ ${commitsContent}
         }
         
         .stat-card {
-            background: rgba(255,255,255,0.95);
-            padding: 2rem;
-            border-radius: 16px;
+            background: linear-gradient(145deg, #333333, #0A0A0A);
+            padding: 2.5rem;
+            border-radius: 20px;
             text-align: center;
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255,255,255,0.2);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
+            border: 2px solid #00DC64;
+            box-shadow: 0 10px 40px rgba(0,220,100,0.2);
+            transition: all 0.4s ease;
             display: flex;
             align-items: center;
-            gap: 1.5rem;
+            gap: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0,220,100,0.2), transparent);
+            transition: left 0.6s ease;
+        }
+        
+        .stat-card:hover::before {
+            left: 100%;
         }
         
         .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 12px 48px rgba(0,0,0,0.15);
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 20px 60px rgba(0,220,100,0.4);
+            border-color: #7D4CFF;
         }
         
-        .stat-card.primary { border-left: 5px solid #667eea; }
-        .stat-card.secondary { border-left: 5px solid #764ba2; }
-        .stat-card.success { border-left: 5px solid #48bb78; }
-        .stat-card.info { border-left: 5px solid #4299e1; }
+        .stat-card.primary { 
+            border-left: 6px solid #00DC64;
+            background: linear-gradient(145deg, #2a4a3a, #0A2A1A);
+        }
+        .stat-card.secondary { 
+            border-left: 6px solid #3C86F4;
+            background: linear-gradient(145deg, #2a3a4a, #0A1A2A);
+        }
+        .stat-card.success { 
+            border-left: 6px solid #00DC64;
+            background: linear-gradient(145deg, #3a4a2a, #0A2A1A);
+        }
+        .stat-card.info { 
+            border-left: 6px solid #3C86F4;
+            background: linear-gradient(145deg, #2a3a4a, #0A1A2A);
+        }
         
         .stat-icon {
-            font-size: 2.5rem;
-            color: #667eea;
-            min-width: 60px;
+            font-size: 3rem;
+            color: #00DC64;
+            min-width: 80px;
+            text-shadow: 0 0 20px rgba(0,220,100,0.5);
+            animation: iconGlow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes iconGlow {
+            from { text-shadow: 0 0 20px rgba(0,220,100,0.5); }
+            to { text-shadow: 0 0 30px rgba(0,220,100,0.8), 0 0 40px rgba(0,220,100,0.3); }
         }
         
         .stat-content {
@@ -713,23 +1018,26 @@ ${commitsContent}
         }
         
         .stat-number {
-            font-size: 2.5rem;
-            font-weight: bold;
+            font-size: 3rem;
+            font-weight: 900;
             margin-bottom: 0.5rem;
-            color: #2d3748;
+            color: #FFFFFF;
             line-height: 1;
+            text-shadow: 0 0 10px rgba(255,255,255,0.3);
         }
         
         .stat-label {
-            font-size: 1.1rem;
-            font-weight: 600;
-            color: #4a5568;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #00DC64;
             margin-bottom: 0.25rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
         
         .stat-sublabel {
             font-size: 0.9rem;
-            color: #718096;
+            color: #CCCCCC;
             opacity: 0.8;
         }
         
@@ -817,12 +1125,12 @@ ${commitsContent}
             text-transform: uppercase;
         }
         
-        .status-done { background: #c6f6d5; color: #22543d; }
-        .status-progress { background: #fed7d7; color: #742a2a; }
-        .status-todo { background: #e2e8f0; color: #2d3748; }
-        .status-testing { background: #fef5e7; color: #744210; }
-        .status-review { background: #e6fffa; color: #234e52; }
-        .status-default { background: #e2e8f0; color: #4a5568; }
+        .status-done { background: #00DC64; color: #FFFFFF; }
+        .status-progress { background: #3C86F4; color: #FFFFFF; }
+        .status-todo { background: #CCCCCC; color: #000000; }
+        .status-testing { background: #7D4CFF; color: #FFFFFF; }
+        .status-review { background: #00DC64; color: #000000; }
+        .status-default { background: #CCCCCC; color: #000000; }
         
         .issue-summary, .commit-message {
             font-size: 1rem;
@@ -850,7 +1158,7 @@ ${commitsContent}
             text-align: center;
             margin-top: 3rem;
             padding: 2rem;
-            color: #718096;
+            color: #CCCCCC;
             font-size: 0.9rem;
         }
         
@@ -1051,6 +1359,397 @@ ${commitsContent}
             border-radius: 4px;
             transition: width 0.3s ease;
         }
+
+        /* AI Summary and Analysis Styles */
+        .ai-summary {
+            background: linear-gradient(135deg, #0A1A0A, #1A2A1A);
+            border: 2px solid #3C86F4;
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 10px 30px rgba(60,134,244,0.2);
+        }
+        
+        .ai-summary h3 {
+            color: #3C86F4;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        
+        .ai-insights {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .insight-card {
+            background: linear-gradient(145deg, #333333, #0A0A0A);
+            border: 1px solid #3C86F4;
+            border-radius: 15px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .insight-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,126,69,0.3);
+        }
+        
+        .insight-card h4 {
+            color: #3C86F4;
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #3C86F4;
+            padding-bottom: 0.5rem;
+        }
+        
+        .insight-card p {
+            color: #e2e8f0;
+            line-height: 1.6;
+        }
+        
+        .sprint-conclusion {
+            background: linear-gradient(135deg, #1A0A2A, #2A1A3A);
+            border: 2px solid #7D4CFF;
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem 0;
+            box-shadow: 0 10px 30px rgba(125,76,255,0.2);
+        }
+        
+        .sprint-conclusion h3 {
+            color: #7D4CFF;
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        
+        .key-achievements, .next-steps {
+            background: linear-gradient(145deg, #333333, #0A0A0A);
+            border: 1px solid #7D4CFF;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 1rem 0;
+        }
+        
+        .key-achievements h4, .next-steps h4 {
+            color: #7D4CFF;
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+        }
+        
+        .key-achievements ul, .next-steps ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .key-achievements li, .next-steps li {
+            color: #e2e8f0;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(0,126,69,0.2);
+        }
+        
+        .key-achievements li:last-child, .next-steps li:last-child {
+            border-bottom: none;
+        }
+
+        /* Enhanced JIRA Issues Styles */
+        .issues-overview {
+            margin-bottom: 2rem;
+        }
+
+        .section-subtitle {
+            color: #CCCCCC;
+            font-size: 1rem;
+            margin: 0;
+            opacity: 0.8;
+        }
+
+        .component-section {
+            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid #333;
+        }
+
+        .component-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 2px solid #00DC64;
+        }
+
+        .component-header h3 {
+            color: #00DC64;
+            margin: 0;
+            font-size: 1.4rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .component-count {
+            background: rgba(0,220,100,0.2);
+            color: #00DC64;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .issues-by-type {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .issue-type-group {
+            background: rgba(0,0,0,0.3);
+            border-radius: 12px;
+            padding: 1rem;
+        }
+
+        .type-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #333;
+        }
+
+        .type-icon {
+            font-size: 1.2rem;
+        }
+
+        .type-name {
+            color: #FFFFFF;
+            font-weight: 600;
+            flex: 1;
+        }
+
+        .type-count {
+            background: rgba(255,255,255,0.1);
+            color: #CCCCCC;
+            padding: 0.25rem 0.5rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+        }
+
+        .issues-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 1rem;
+        }
+
+        .issue-card {
+            background: linear-gradient(145deg, #333333, #2a2a2a);
+            border: 1px solid #444;
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .issue-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,220,100,0.15);
+            border-color: #00DC64;
+        }
+
+        .issue-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+
+        .issue-key-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .issue-key-link {
+            color: #3C86F4;
+            text-decoration: none;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            padding: 0.25rem 0.5rem;
+            background: rgba(60,134,244,0.1);
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .issue-key-link:hover {
+            background: rgba(60,134,244,0.2);
+            color: #FFFFFF;
+        }
+
+        .priority-badge {
+            font-size: 0.8rem;
+        }
+
+        .issue-status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .issue-card-body {
+            margin-top: 0.75rem;
+        }
+
+        .issue-title {
+            color: #FFFFFF;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            margin: 0 0 0.75rem 0;
+            font-weight: 500;
+        }
+
+        .issue-assignee {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #CCCCCC;
+            font-size: 0.85rem;
+        }
+
+        .issue-assignee.unassigned {
+            color: #999;
+            opacity: 0.7;
+        }
+
+        .issue-assignee i {
+            color: #00DC64;
+            font-size: 0.9rem;
+        }
+
+        .issue-assignee.unassigned i {
+            color: #999;
+        }
+
+        /* Enhanced Commits Styles */
+        .commits-overview {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            border-radius: 12px;
+            border: 1px solid #333;
+        }
+
+        .commits-stats {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .commit-stat {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #CCCCCC;
+            font-size: 0.9rem;
+        }
+
+        .commit-stat i {
+            color: #00DC64;
+        }
+
+        .commits-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .commit-card {
+            background: linear-gradient(145deg, #333333, #2a2a2a);
+            border: 1px solid #444;
+            border-radius: 12px;
+            padding: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .commit-card:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(0,220,100,0.1);
+            border-color: #00DC64;
+        }
+
+        .commit-card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .commit-meta {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .commit-sha {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #3C86F4;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            background: rgba(60,134,244,0.1);
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .commit-sha:hover {
+            background: rgba(60,134,244,0.2);
+            color: #FFFFFF;
+            transform: translateY(-1px);
+        }
+
+        .commit-date {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #CCCCCC;
+            font-size: 0.8rem;
+        }
+
+        .commit-author {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #00DC64;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .commit-card-body {
+            margin-top: 0.75rem;
+        }
+
+        .commit-message {
+            color: #FFFFFF;
+            line-height: 1.4;
+            margin: 0;
+            font-size: 0.9rem;
+        }
     `;
     
     return baseCSS;
@@ -1058,12 +1757,12 @@ ${commitsContent}
 
   private getStatusColor(status: string): string {
     const statusColors: Record<string, string> = {
-      'Done': '#22543d',
-      'In Progress': '#742a2a',
-      'To Do': '#2d3748',
-      'Testing': '#744210',
-      'Code Review': '#234e52',
-      'default': '#4a5568'
+      'Done': '#00DC64',
+      'In Progress': '#3C86F4',
+      'To Do': '#CCCCCC',
+      'Testing': '#7D4CFF',
+      'Code Review': '#00DC64',
+      'default': '#CCCCCC'
     };
     return statusColors[status] || statusColors['default'];
   }
@@ -1093,13 +1792,244 @@ ${commitsContent}
 
   private getStatusColorForConfluence(status: string): string {
     const statusColors: Record<string, string> = {
-      'Done': '#22543d',
-      'In Progress': '#742a2a',
-      'To Do': '#2d3748',
-      'Testing': '#744210',
-      'Code Review': '#234e52',
-      'default': '#4a5568'
+      'Done': '#00DC64',
+      'In Progress': '#3C86F4',
+      'To Do': '#CCCCCC',
+      'Testing': '#7D4CFF',
+      'Code Review': '#00DC64',
+      'default': '#CCCCCC'
     };
     return statusColors[status] || statusColors['default'];
+  }
+
+  private getStatusIconForConfluence(status: string): string {
+    const statusIcons: Record<string, string> = {
+      'Done': '✅',
+      'In Progress': '🔄',
+      'To Do': '📋',
+      'Testing': '🧪',
+      'Code Review': '👀',
+      'Closed': '🔒',
+      'Resolved': '✅',
+      'Open': '📂',
+      'Backlog': '📦',
+      'Selected for Development': '🎯',
+      'In Review': '👁️',
+      'Ready for Testing': '🚀'
+    };
+    return statusIcons[status] || '📄';
+  }
+
+  private generateAISummary(jiraIssues: JiraIssue[], commits: GitHubCommit[], sprintName: string): string {
+    const totalIssues = jiraIssues.length;
+    const totalCommits = commits.length;
+    const completedIssues = jiraIssues.filter(issue => issue.fields.status.name === 'Done').length;
+    const completionRate = totalIssues > 0 ? Math.round((completedIssues / totalIssues) * 100) : 0;
+    
+    const issueTypes = this.getIssueTypeCounts(jiraIssues);
+    const topIssueType = Object.entries(issueTypes).sort(([,a], [,b]) => (b as number) - (a as number))[0];
+    
+    const authorCounts = this.getAuthorCounts(commits);
+    const topContributor = Object.entries(authorCounts).sort(([,a], [,b]) => (b as number) - (a as number))[0];
+    
+    const priorities = this.getPriorityCounts(jiraIssues);
+    const criticalIssues = priorities['Critical'] || 0;
+    
+    return `
+<div class="ai-summary">
+    <h3><i class="fas fa-robot"></i> AI-Generated Sprint Analysis</h3>
+    <div class="ai-insights">
+        <div class="insight-card">
+            <h4>🎯 Sprint Performance</h4>
+            <p>This sprint achieved a <strong>${completionRate}%</strong> completion rate with ${completedIssues} out of ${totalIssues} issues resolved. 
+            ${completionRate >= 80 ? '✅ <strong>Excellent delivery performance!</strong>' : completionRate >= 60 ? '📈 <strong>Good progress with room for improvement.</strong>' : '⚠️ <strong>Focus needed on sprint planning and execution.</strong>'}</p>
+        </div>
+        
+        <div class="insight-card">
+            <h4>📊 Work Composition</h4>
+            <p>The sprint focused primarily on <strong>${topIssueType ? topIssueType[0] : 'various tasks'}</strong> 
+            ${topIssueType ? `(${topIssueType[1]} items, ${Math.round((topIssueType[1] as number / totalIssues) * 100)}% of total work)` : ''}. 
+            ${criticalIssues > 0 ? `⚠️ <strong>${criticalIssues} critical issue${criticalIssues > 1 ? 's' : ''} ${criticalIssues === 1 ? 'was' : 'were'} addressed.</strong>` : '✅ <strong>No critical issues reported.</strong>'}</p>
+        </div>
+        
+        <div class="insight-card">
+            <h4>👥 Team Dynamics</h4>
+            <p>Development activity shows <strong>${totalCommits} commits</strong> across the sprint period. 
+            ${topContributor ? `<strong>${topContributor[0]}</strong> led contributions with ${topContributor[1]} commits.` : 'Balanced contribution across team members.'} 
+            ${totalCommits / totalIssues > 2 ? 'High code churn suggests complex implementations.' : 'Efficient development patterns observed.'}</p>
+        </div>
+        
+        <div class="insight-card">
+            <h4>🔮 Key Insights</h4>
+            <p>${this.generateSprintInsights(jiraIssues, commits, completionRate)}</p>
+        </div>
+    </div>
+</div>`;
+  }
+
+  private generateSprintInsights(jiraIssues: JiraIssue[], commits: GitHubCommit[], completionRate: number): string {
+    const bugCount = jiraIssues.filter(issue => issue.fields.issuetype.name === 'Bug').length;
+    const storyCount = jiraIssues.filter(issue => issue.fields.issuetype.name === 'Story').length;
+    const taskCount = jiraIssues.filter(issue => issue.fields.issuetype.name === 'Task').length;
+    
+    const insights = [];
+    
+    if (bugCount > storyCount + taskCount) {
+      insights.push("🔧 High bug focus indicates maintenance mode or quality improvement phase.");
+    } else if (storyCount > taskCount + bugCount) {
+      insights.push("🚀 Story-heavy sprint suggests feature development and user value delivery.");
+    } else if (taskCount > storyCount + bugCount) {
+      insights.push("⚙️ Task-oriented sprint indicates infrastructure or technical debt work.");
+    }
+    
+    if (completionRate >= 90) {
+      insights.push("🎯 Exceptional sprint execution with near-perfect completion rate.");
+    } else if (completionRate >= 70) {
+      insights.push("📈 Solid sprint performance with good predictability.");
+    } else if (completionRate >= 50) {
+      insights.push("⚠️ Sprint scope may need adjustment for better predictability.");
+    } else {
+      insights.push("🚨 Consider sprint planning review and capacity assessment.");
+    }
+    
+    if (commits.length > jiraIssues.length * 3) {
+      insights.push("🔄 High commit-to-issue ratio suggests complex or iterative development.");
+    } else if (commits.length < jiraIssues.length) {
+      insights.push("📝 Low commit activity relative to issues - possible documentation or planning work.");
+    }
+    
+    return insights.join(' ');
+  }
+
+  private generateConclusion(jiraIssues: JiraIssue[], commits: GitHubCommit[], sprintName: string): string {
+    const completedIssues = jiraIssues.filter(issue => issue.fields.status.name === 'Done').length;
+    const completionRate = jiraIssues.length > 0 ? Math.round((completedIssues / jiraIssues.length) * 100) : 0;
+    
+    return `
+<div class="sprint-conclusion">
+    <h3><i class="fas fa-flag-checkered"></i> Sprint Conclusion</h3>
+    <div class="conclusion-content">
+        <p><strong>${sprintName}</strong> concluded with <strong>${completedIssues}/${jiraIssues.length}</strong> issues completed (${completionRate}% success rate) 
+        and <strong>${commits.length}</strong> code commits delivered.</p>
+        
+        <div class="key-achievements">
+            <h4>🏆 Key Achievements:</h4>
+            <ul>
+                <li>✅ Successfully delivered ${completedIssues} planned items</li>
+                <li>🔄 Maintained development velocity with ${commits.length} commits</li>
+                <li>📊 Achieved ${completionRate}% sprint goal completion</li>
+                ${this.getTopAchievements(jiraIssues).map(achievement => `<li>${achievement}</li>`).join('')}
+            </ul>
+        </div>
+        
+        <div class="next-steps">
+            <h4>🎯 Recommendations for Next Sprint:</h4>
+            <ul>
+                ${this.getRecommendations(jiraIssues, commits, completionRate).map(rec => `<li>${rec}</li>`).join('')}
+            </ul>
+        </div>
+    </div>
+</div>`;
+  }
+
+  private generateAISummaryForConfluence(jiraIssues: JiraIssue[], commits: GitHubCommit[], sprintName: string): string {
+    const totalIssues = jiraIssues.length;
+    const totalCommits = commits.length;
+    const completedIssues = jiraIssues.filter(issue => issue.fields.status.name === 'Done').length;
+    const completionRate = totalIssues > 0 ? Math.round((completedIssues / totalIssues) * 100) : 0;
+    
+    const issueTypes = this.getIssueTypeCounts(jiraIssues);
+    const topIssueType = Object.entries(issueTypes).sort(([,a], [,b]) => (b as number) - (a as number))[0];
+    
+    const authorCounts = this.getAuthorCounts(commits);
+    const topContributor = Object.entries(authorCounts).sort(([,a], [,b]) => (b as number) - (a as number))[0];
+    
+    const priorities = this.getPriorityCounts(jiraIssues);
+    const criticalIssues = priorities['Critical'] || 0;
+    
+    return `
+<h3>🎯 Sprint Performance Analysis</h3>
+<p>This sprint achieved a <strong>${completionRate}%</strong> completion rate with ${completedIssues} out of ${totalIssues} issues resolved. 
+${completionRate >= 80 ? '✅ <strong>Excellent delivery performance!</strong>' : completionRate >= 60 ? '📈 <strong>Good progress with room for improvement.</strong>' : '⚠️ <strong>Focus needed on sprint planning and execution.</strong>'}</p>
+
+<h3>📊 Work Composition</h3>
+<p>The sprint focused primarily on <strong>${topIssueType ? topIssueType[0] : 'various tasks'}</strong> 
+${topIssueType ? `(${topIssueType[1]} items, ${Math.round((topIssueType[1] as number / totalIssues) * 100)}% of total work)` : ''}. 
+${criticalIssues > 0 ? `⚠️ <strong>${criticalIssues} critical issue${criticalIssues > 1 ? 's' : ''} ${criticalIssues === 1 ? 'was' : 'were'} addressed.</strong>` : '✅ <strong>No critical issues reported.</strong>'}</p>
+
+<h3>👥 Team Dynamics</h3>
+<p>Development activity shows <strong>${totalCommits} commits</strong> across the sprint period. 
+${topContributor ? `<strong>${topContributor[0]}</strong> led contributions with ${topContributor[1]} commits.` : 'Balanced contribution across team members.'} 
+${totalCommits / totalIssues > 2 ? 'High code churn suggests complex implementations.' : 'Efficient development patterns observed.'}</p>
+
+<h3>🔮 Key Insights</h3>
+<p>${this.generateSprintInsights(jiraIssues, commits, completionRate)}</p>
+`;
+  }
+
+  private generateConclusionForConfluence(jiraIssues: JiraIssue[], commits: GitHubCommit[], sprintName: string): string {
+    const completedIssues = jiraIssues.filter(issue => issue.fields.status.name === 'Done').length;
+    const completionRate = jiraIssues.length > 0 ? Math.round((completedIssues / jiraIssues.length) * 100) : 0;
+    
+    return `
+<h3>📋 Sprint Summary</h3>
+<p><strong>${sprintName}</strong> concluded with <strong>${completedIssues}/${jiraIssues.length}</strong> issues completed (${completionRate}% success rate) 
+and <strong>${commits.length}</strong> code commits delivered.</p>
+
+<h4>🏆 Key Achievements:</h4>
+<ul>
+<li>✅ Successfully delivered ${completedIssues} planned items</li>
+<li>🔄 Maintained development velocity with ${commits.length} commits</li>
+<li>📊 Achieved ${completionRate}% sprint goal completion</li>
+${this.getTopAchievements(jiraIssues).map(achievement => `<li>${achievement}</li>`).join('')}
+</ul>
+
+<h4>🎯 Recommendations for Next Sprint:</h4>
+<ul>
+${this.getRecommendations(jiraIssues, commits, completionRate).map(rec => `<li>${rec}</li>`).join('')}
+</ul>
+
+<h4>📈 Sprint Metrics Dashboard</h4>
+<table>
+<tr><th>Metric</th><th>Value</th><th>Target</th><th>Status</th></tr>
+<tr><td>Completion Rate</td><td>${completionRate}%</td><td>80%</td><td>${completionRate >= 80 ? '🟢 Excellent' : completionRate >= 60 ? '🟡 Good' : '🔴 Needs Improvement'}</td></tr>
+<tr><td>Code Activity</td><td>${commits.length} commits</td><td>-</td><td>${commits.length > 50 ? '🟢 High' : commits.length > 20 ? '🟡 Moderate' : '🔴 Low'}</td></tr>
+<tr><td>Issue Resolution</td><td>${completedIssues}/${jiraIssues.length}</td><td>${jiraIssues.length}</td><td>${completedIssues === jiraIssues.length ? '🟢 Complete' : '🟡 Partial'}</td></tr>
+</table>
+`;
+  }
+
+  private getTopAchievements(jiraIssues: JiraIssue[]): string[] {
+    const achievements = [];
+    const bugCount = jiraIssues.filter(issue => issue.fields.issuetype.name === 'Bug' && issue.fields.status.name === 'Done').length;
+    const storyCount = jiraIssues.filter(issue => issue.fields.issuetype.name === 'Story' && issue.fields.status.name === 'Done').length;
+    
+    if (bugCount > 0) {
+      achievements.push(`🐛 Resolved ${bugCount} bug${bugCount > 1 ? 's' : ''} improving system stability`);
+    }
+    if (storyCount > 0) {
+      achievements.push(`📚 Delivered ${storyCount} user stor${storyCount > 1 ? 'ies' : 'y'} enhancing user experience`);
+    }
+    
+    return achievements.slice(0, 3);
+  }
+
+  private getRecommendations(jiraIssues: JiraIssue[], commits: GitHubCommit[], completionRate: number): string[] {
+    const recommendations = [];
+    
+    if (completionRate < 70) {
+      recommendations.push("📊 Review sprint planning process to improve estimation accuracy");
+      recommendations.push("⏱️ Consider reducing sprint scope or extending timeline for complex items");
+    } else if (completionRate >= 90) {
+      recommendations.push("🎯 Excellent execution! Consider taking on additional stretch goals");
+      recommendations.push("📈 Share best practices with other teams for continuous improvement");
+    }
+    
+    const bugCount = jiraIssues.filter(issue => issue.fields.issuetype.name === 'Bug').length;
+    if (bugCount > jiraIssues.length * 0.3) {
+      recommendations.push("🔧 High bug count detected - focus on code quality and testing processes");
+    }
+    
+    return recommendations.slice(0, 3);
   }
 }

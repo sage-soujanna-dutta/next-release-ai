@@ -11,9 +11,14 @@ export declare class HtmlFormatter {
     private formatJiraIssuesForConfluence;
     private generateDetailedStats;
     private formatCommits;
+    private formatCommitCard;
+    private getTimeAgo;
+    private formatCommitMessage;
     private formatCommitsForConfluence;
     private formatJiraIssue;
+    private formatJiraIssueCard;
     private groupIssuesByType;
+    private groupIssuesByComponent;
     private getIssueTypeCounts;
     private getStatusCounts;
     private getPriorityCounts;
@@ -26,4 +31,12 @@ export declare class HtmlFormatter {
     private getPriorityIconForConfluence;
     private getIssueTypeIconForConfluence;
     private getStatusColorForConfluence;
+    private getStatusIconForConfluence;
+    private generateAISummary;
+    private generateSprintInsights;
+    private generateConclusion;
+    private generateAISummaryForConfluence;
+    private generateConclusionForConfluence;
+    private getTopAchievements;
+    private getRecommendations;
 }

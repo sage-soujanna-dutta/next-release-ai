@@ -23,11 +23,13 @@ export class ReleaseNotesService {
         console.log(`🚀 Starting release notes generation for sprint: ${sprintNumber}`);
         let jiraIssues = [];
         let commits = [];
+        let sprintName = sprintNumber; // Default to sprint number
         if (sprintNumber) {
             // Fetch sprint details first to get the date range
             console.log(`� Fetching sprint details for ${sprintNumber}...`);
             const sprintDetails = await this.jiraService.getSprintDetails(sprintNumber);
             console.log(`✅ Found sprint: ${sprintDetails.name}`);
+            sprintName = sprintDetails.name; // Use the full sprint name
             if (sprintDetails.startDate && sprintDetails.endDate) {
                 console.log(`📅 Sprint period: ${sprintDetails.startDate} to ${sprintDetails.endDate} (end date exclusive)`);
                 // Fetch commits for the sprint period
@@ -55,7 +57,7 @@ export class ReleaseNotesService {
         if (format === "html") {
             console.log('🎨 Generating HTML content with modern theme...');
             const htmlFormatter = new HtmlFormatter(theme);
-            content = htmlFormatter.format(jiraIssues, commits, sprintNumber);
+            content = htmlFormatter.format(jiraIssues, commits, sprintName);
         }
         else {
             console.log('📝 Generating Markdown content...');

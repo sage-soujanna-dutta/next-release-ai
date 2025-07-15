@@ -19,6 +19,9 @@ export interface JiraIssue {
     priority?: {
       name: string;
     };
+    components?: Array<{
+      name: string;
+    }>;
   };
 }
 
@@ -67,18 +70,36 @@ export class JiraService {
         throw new Error(`Sprint with number ${sprintNumber} not found`);
       }
 
-      // Then fetch issues for the sprint
-      const response = await axios.get(
-        `https://${this.domain}/rest/agile/1.0/sprint/${matchedSprint.id}/issue`,
-        {
-          headers: {
-            Authorization: `Bearer ${this.token}`,
-            Accept: "application/json",
-          },
-        }
-      );
+      // Then fetch issues for the sprint with pagination
+      let allIssues: JiraIssue[] = [];
+      let startAt = 0;
+      const maxResults = 100; // JIRA API maximum
+      let total = 0;
 
-      return response.data.issues;
+      do {
+        const response = await axios.get(
+          `https://${this.domain}/rest/agile/1.0/sprint/${matchedSprint.id}/issue`,
+          {
+            headers: {
+              Authorization: `Bearer ${this.token}`,
+              Accept: "application/json",
+            },
+            params: {
+              startAt,
+              maxResults,
+            },
+          }
+        );
+        
+        allIssues.push(...response.data.issues);
+        total = response.data.total;
+        startAt += maxResults;
+        
+        console.log(`Fetched ${allIssues.length} of ${total} issues for sprint ${sprintNumber}...`);
+      } while (allIssues.length < total);
+
+      console.log(`✅ Successfully fetched all ${allIssues.length} issues for sprint ${sprintNumber}`);
+      return allIssues;
     } catch (error) {
       console.error("Error fetching JIRA issues:", error);
       throw new Error(`Failed to fetch JIRA issues: ${error instanceof Error ? error.message : "Unknown error"}`);

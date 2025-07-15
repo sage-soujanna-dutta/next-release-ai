@@ -26,14 +26,29 @@ export class JiraService {
             if (!matchedSprint) {
                 throw new Error(`Sprint with number ${sprintNumber} not found`);
             }
-            // Then fetch issues for the sprint
-            const response = await axios.get(`https://${this.domain}/rest/agile/1.0/sprint/${matchedSprint.id}/issue`, {
-                headers: {
-                    Authorization: `Bearer ${this.token}`,
-                    Accept: "application/json",
-                },
-            });
-            return response.data.issues;
+            // Then fetch issues for the sprint with pagination
+            let allIssues = [];
+            let startAt = 0;
+            const maxResults = 100; // JIRA API maximum
+            let total = 0;
+            do {
+                const response = await axios.get(`https://${this.domain}/rest/agile/1.0/sprint/${matchedSprint.id}/issue`, {
+                    headers: {
+                        Authorization: `Bearer ${this.token}`,
+                        Accept: "application/json",
+                    },
+                    params: {
+                        startAt,
+                        maxResults,
+                    },
+                });
+                allIssues.push(...response.data.issues);
+                total = response.data.total;
+                startAt += maxResults;
+                console.log(`Fetched ${allIssues.length} of ${total} issues for sprint ${sprintNumber}...`);
+            } while (allIssues.length < total);
+            console.log(`✅ Successfully fetched all ${allIssues.length} issues for sprint ${sprintNumber}`);
+            return allIssues;
         }
         catch (error) {
             console.error("Error fetching JIRA issues:", error);

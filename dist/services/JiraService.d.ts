@@ -14,6 +14,9 @@ export interface JiraIssue {
         priority?: {
             name: string;
         };
+        components?: Array<{
+            name: string;
+        }>;
     };
 }
 export interface SprintDetails {
