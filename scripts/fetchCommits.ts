@@ -5,8 +5,8 @@ import dotenv from "dotenv";
 dotenv.config();
 
 export async function fetchCommits(date: string) {
-  const repo = process.env.GITHUB_REPOSITORY!;
-  const token = process.env.GITHUB_TOKEN!;
+  const repo = process.env.GH_REPOSITORY!;
+  const token = process.env.GH_TOKEN!;
 
   // Get last Friday (even if today is Friday)
   const today = dayjs(date);

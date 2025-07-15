@@ -40,7 +40,7 @@ Go to your GitHub repository → Settings → Secrets and variables → Actions,
 JIRA_DOMAIN=your-domain.atlassian.net
 JIRA_TOKEN=your_jira_api_token
 JIRA_BOARD_ID=123
-GITHUB_TOKEN=ghp_your_github_token (usually auto-provided)
+GH_TOKEN=ghp_your_github_token (usually auto-provided)
 ```
 
 #### Optional Secrets:

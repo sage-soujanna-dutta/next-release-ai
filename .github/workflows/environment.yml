@@ -51,7 +51,7 @@ jobs:
         JIRA_DOMAIN: ${{ secrets.JIRA_DOMAIN }}
         JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         JIRA_BOARD_ID: ${{ secrets.JIRA_BOARD_ID }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         CONFLUENCE_USERNAME: ${{ secrets.CONFLUENCE_USERNAME }}
         CONFLUENCE_PAT: ${{ secrets.CONFLUENCE_PAT }}
         CONFLUENCE_SPACE: ${{ secrets.CONFLUENCE_SPACE }}
@@ -63,7 +63,7 @@ jobs:
         if [ -z "$JIRA_DOMAIN" ]; then echo "❌ JIRA_DOMAIN missing"; exit 1; fi
         if [ -z "$JIRA_TOKEN" ]; then echo "❌ JIRA_TOKEN missing"; exit 1; fi
         if [ -z "$JIRA_BOARD_ID" ]; then echo "❌ JIRA_BOARD_ID missing"; exit 1; fi
-        if [ -z "$GITHUB_TOKEN" ]; then echo "❌ GITHUB_TOKEN missing"; exit 1; fi
+        if [ -z "$GH_TOKEN" ]; then echo "❌ GH_TOKEN missing"; exit 1; fi
         
         echo "✅ Required secrets are configured"
         
@@ -78,8 +78,8 @@ jobs:
         JIRA_DOMAIN: ${{ secrets.JIRA_DOMAIN }}
         JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         JIRA_BOARD_ID: ${{ secrets.JIRA_BOARD_ID }}
-        GITHUB_REPOSITORY: ${{ github.repository }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_REPOSITORY: ${{ github.repository }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         CONFLUENCE_USERNAME: ${{ secrets.CONFLUENCE_USERNAME }}
         CONFLUENCE_PAT: ${{ secrets.CONFLUENCE_PAT }}
         CONFLUENCE_SPACE: ${{ secrets.CONFLUENCE_SPACE }}
@@ -97,8 +97,8 @@ jobs:
         
         # Test GitHub connection
         echo "Testing GitHub connection..."
-        curl -s -H "Authorization: token $GITHUB_TOKEN" \
-          "https://api.github.com/repos/$GITHUB_REPOSITORY" > /dev/null && \
+        curl -s -H "Authorization: token $GH_TOKEN" \
+          "https://api.github.com/repos/$GH_REPOSITORY" > /dev/null && \
           echo "✅ GitHub connection successful" || \
           echo "❌ GitHub connection failed"
         
@@ -119,8 +119,8 @@ jobs:
         JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         JIRA_BOARD_ID: ${{ secrets.JIRA_BOARD_ID }}
         JIRA_SPRINT_NUMBER: ${{ github.event.inputs.sprint_number || secrets.DEFAULT_SPRINT_NUMBER }}
-        GITHUB_REPOSITORY: ${{ github.repository }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_REPOSITORY: ${{ github.repository }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         CONFLUENCE_USERNAME: ${{ secrets.CONFLUENCE_USERNAME }}
         CONFLUENCE_PAT: ${{ secrets.CONFLUENCE_PAT }}
         CONFLUENCE_SPACE: ${{ secrets.CONFLUENCE_SPACE }}

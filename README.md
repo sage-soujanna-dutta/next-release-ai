@@ -39,8 +39,8 @@ JIRA_BOARD_ID=123
 JIRA_SPRINT_NUMBER=Sprint-42
 
 # GitHub Configuration
-GITHUB_REPOSITORY=owner/repository-name
-GITHUB_TOKEN=ghp_your_github_token
+GH_REPOSITORY=owner/repository-name
+GH_TOKEN=ghp_your_github_token
 
 # Confluence Configuration
 CONFLUENCE_USERNAME=your-email@company.com
@@ -213,7 +213,7 @@ Add these secrets to your GitHub repository:
 JIRA_DOMAIN
 JIRA_TOKEN
 JIRA_BOARD_ID
-GITHUB_TOKEN (automatically provided)
+GH_TOKEN (automatically provided)
 CONFLUENCE_USERNAME
 CONFLUENCE_PAT
 CONFLUENCE_SPACE

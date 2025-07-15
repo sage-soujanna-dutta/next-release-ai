@@ -55,8 +55,8 @@ jobs:
         JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         JIRA_BOARD_ID: ${{ secrets.JIRA_BOARD_ID }}
         JIRA_SPRINT_NUMBER: ${{ github.event.inputs.sprint_number || secrets.DEFAULT_SPRINT_NUMBER }}
-        GITHUB_REPOSITORY: ${{ github.repository }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_REPOSITORY: ${{ github.repository }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         CONFLUENCE_USERNAME: ${{ secrets.CONFLUENCE_USERNAME }}
         CONFLUENCE_PAT: ${{ secrets.CONFLUENCE_PAT }}
         CONFLUENCE_SPACE: ${{ secrets.CONFLUENCE_SPACE }}
@@ -115,8 +115,8 @@ jobs:
         JIRA_DOMAIN: ${{ secrets.JIRA_DOMAIN }}
         JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
         JIRA_BOARD_ID: ${{ secrets.JIRA_BOARD_ID }}
-        GITHUB_REPOSITORY: ${{ github.repository }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_REPOSITORY: ${{ github.repository }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         CONFLUENCE_USERNAME: ${{ secrets.CONFLUENCE_USERNAME }}
         CONFLUENCE_PAT: ${{ secrets.CONFLUENCE_PAT }}
         CONFLUENCE_SPACE: ${{ secrets.CONFLUENCE_SPACE }}
