@@ -1,0 +1,28 @@
+name: Release Notes Generator
+
+on:
+  schedule:
+    - cron: '0 10 */14 * 5'
+  workflow_dispatch:
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: Install dependencies
+        run: npm ci
+      - name: Run MCP script
+        env:
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+          JIRA_DOMAIN: ${{ secrets.JIRA_DOMAIN }}
+          CONFLUENCE_SPACE: ${{ secrets.CONFLUENCE_SPACE }}
+          CONFLUENCE_PARENT_PAGE_ID: ${{ secrets.CONFLUENCE_PARENT_PAGE_ID }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: npx tsx scripts/postToConfluence.ts
