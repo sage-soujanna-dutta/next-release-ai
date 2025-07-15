@@ -28,7 +28,7 @@ export async function postToConfluence(html: string, sprintNumber?: string) {
   }`;
 
   await axios.post(
-    `https://${CONFLUENCE_HOST}/rest/api/content`,
+    `https://${CONFLUENCE_HOST}`,
     {
       type: "page",
       title: pageTitle,
