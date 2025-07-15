@@ -1,18 +1,40 @@
 {
   "name": "release-mcp-server",
   "version": "1.0.0",
+  "description": "MCP server for automated release notes generation with JIRA and GitHub integration",
+  "type": "module",
   "scripts": {
-    "release": "tsx scripts/postToConfluence.ts"
+    "build": "tsc",
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
+    "release": "tsx scripts/postToConfluence.ts",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "release-mcp-server": "./dist/index.js"
   },
   "dependencies": {
+    "@modelcontextprotocol/sdk": "^0.4.0",
     "axios": "^1.6.0",
     "dayjs": "^1.11.7",
     "dotenv": "^16.6.1",
-    "marked": "^9.0.0"
+    "marked": "^9.0.0",
+    "jsdom": "^23.0.0",
+    "commander": "^11.0.0"
   },
   "devDependencies": {
     "@types/node": "^24.0.13",
+    "@types/jsdom": "^21.1.0",
     "tsx": "^4.6.2",
     "typescript": "^5.1.3"
-  }
+  },
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "release-notes",
+    "jira",
+    "github",
+    "confluence",
+    "automation"
+  ]
 }

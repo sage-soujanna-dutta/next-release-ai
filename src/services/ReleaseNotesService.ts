@@ -1,0 +1,216 @@
+import { JiraService } from "./JiraService.js";
+import { GitHubService } from "./GitHubService.js";
+import { ConfluenceService } from "./ConfluenceService.js";
+import { TeamsService } from "./TeamsService.js";
+import { HtmlFormatter } from "../utils/HtmlFormatter.js";
+import { MarkdownFormatter } from "../utils/MarkdownFormatter.js";
+import { FileService } from "./FileService.js";
+
+export interface ReleaseNotesOptions {
+  sprintNumber?: string;
+  date?: string;
+  format?: "html" | "markdown";
+  theme?: "default" | "modern" | "minimal";
+}
+
+export interface WorkflowOptions {
+  sprintNumber?: string;
+  date?: string;
+  output?: "confluence" | "file" | "both";
+  notifyTeams?: boolean;
+}
+
+export interface ReleaseNotesResult {
+  content: string;
+  format: string;
+  theme?: string;
+  filePath?: string;
+  stats: {
+    jiraIssues: number;
+    commits: number;
+  };
+}
+
+export interface WorkflowResult {
+  summary: string;
+  steps: string[];
+  stats: {
+    jiraIssues: number;
+    commits: number;
+  };
+}
+
+export class ReleaseNotesService {
+  private jiraService: JiraService;
+  private githubService: GitHubService;
+  private confluenceService: ConfluenceService;
+  private teamsService: TeamsService;
+  private fileService: FileService;
+
+  constructor() {
+    this.jiraService = new JiraService();
+    this.githubService = new GitHubService();
+    this.confluenceService = new ConfluenceService();
+    this.teamsService = new TeamsService();
+    this.fileService = new FileService();
+  }
+
+  async generateReleaseNotes(options: ReleaseNotesOptions): Promise<ReleaseNotesResult> {
+    const { sprintNumber, date, format = "html", theme = "modern" } = options;
+
+    console.log(`🚀 Starting release notes generation for sprint: ${sprintNumber}`);
+
+    let jiraIssues: any[] = [];
+    let commits: any[] = [];
+
+    if (sprintNumber) {
+      // Fetch sprint details first to get the date range
+      console.log(`� Fetching sprint details for ${sprintNumber}...`);
+      const sprintDetails = await this.jiraService.getSprintDetails(sprintNumber);
+      console.log(`✅ Found sprint: ${sprintDetails.name}`);
+      
+      if (sprintDetails.startDate && sprintDetails.endDate) {
+        console.log(`📅 Sprint period: ${sprintDetails.startDate} to ${sprintDetails.endDate} (end date exclusive)`);
+        
+        // Fetch commits for the sprint period
+        console.log("🔗 Fetching GitHub commits for sprint period...");
+        commits = await this.githubService.fetchCommitsForDateRange(
+          sprintDetails.startDate, 
+          sprintDetails.endDate
+        );
+        console.log(`✅ Found ${commits.length} commits during sprint period`);
+      } else {
+        console.log("⚠️ Sprint dates not available, falling back to last 8 days");
+        commits = await this.githubService.fetchCommits(date);
+        console.log(`✅ Found ${commits.length} commits from the last 8 days`);
+      }
+
+      // Fetch JIRA issues for the sprint
+      console.log('📊 Fetching JIRA issues...');
+      jiraIssues = await this.jiraService.fetchIssues(sprintNumber);
+      console.log(`✅ Found ${jiraIssues.length} JIRA issues`);
+    } else {
+      // No sprint specified, use fallback approach
+      console.log('🔗 Fetching GitHub commits (last 8 days)...');
+      commits = await this.githubService.fetchCommits(date);
+      console.log(`✅ Found ${commits.length} commits from the last 8 days`);
+    }
+
+    let content: string;
+    if (format === "html") {
+      console.log('🎨 Generating HTML content with modern theme...');
+      const htmlFormatter = new HtmlFormatter(theme);
+      content = htmlFormatter.format(jiraIssues, commits, sprintNumber);
+    } else {
+      console.log('📝 Generating Markdown content...');
+      const markdownFormatter = new MarkdownFormatter();
+      content = markdownFormatter.format(jiraIssues, commits);
+    }
+
+    // Always save to file
+    console.log('💾 Saving to file...');
+    const filePath = await this.fileService.saveReleaseNotes(content, sprintNumber);
+    console.log(`✅ File saved to: ${filePath}`);
+
+    return {
+      content,
+      format,
+      theme: format === "html" ? theme : undefined,
+      filePath,
+      stats: {
+        jiraIssues: jiraIssues.length,
+        commits: commits.length,
+      },
+    };
+  }
+
+  async previewReleaseNotes(options: ReleaseNotesOptions): Promise<ReleaseNotesResult> {
+    return this.generateReleaseNotes(options);
+  }
+
+  async createCompleteWorkflow(options: WorkflowOptions): Promise<WorkflowResult> {
+    const { sprintNumber, date, output = "both", notifyTeams = true } = options;
+    const steps: string[] = [];
+    
+    let jiraIssues: any[] = [];
+    let commits: any[] = [];
+    let sprintDetails: any = null;
+
+    if (sprintNumber) {
+      // Fetch sprint details first to get the date range
+      console.log(`📅 Fetching sprint details for ${sprintNumber}...`);
+      sprintDetails = await this.jiraService.getSprintDetails(sprintNumber);
+      console.log(`✅ Found sprint: ${sprintDetails.name}`);
+      
+      if (sprintDetails.startDate && sprintDetails.endDate) {
+        console.log(`📅 Sprint period: ${sprintDetails.startDate} to ${sprintDetails.endDate}`);
+        
+        // Fetch commits for the sprint period
+        console.log("� Fetching GitHub commits for sprint period...");
+        commits = await this.githubService.fetchCommitsForDateRange(
+          sprintDetails.startDate, 
+          sprintDetails.endDate
+        );
+        console.log(`✅ Found ${commits.length} commits during sprint period`);
+      } else {
+        console.log("⚠️ Sprint dates not available, falling back to last 8 days");
+        commits = await this.githubService.fetchCommits();
+        console.log(`✅ Found ${commits.length} commits from the last 8 days`);
+      }
+
+      // Fetch JIRA issues for the sprint
+      console.log("📊 Fetching JIRA issues...");
+      jiraIssues = await this.jiraService.fetchIssues(sprintNumber);
+      console.log(`✅ Found ${jiraIssues.length} JIRA issues`);
+    } else {
+      // No sprint specified, use fallback approach
+      console.log("🔗 Fetching GitHub commits (last 8 days)...");
+      commits = await this.githubService.fetchCommits();
+      console.log(`✅ Found ${commits.length} commits from the last 8 days`);
+    }
+    
+    // Generate release notes
+    const releaseNotes = await this.generateReleaseNotes({
+      sprintNumber,
+      date,
+      format: "html",
+      theme: "modern",
+    });
+    steps.push("Generated release notes");
+
+    // Save to file if requested
+    if (output === "file" || output === "both") {
+      await this.fileService.saveReleaseNotes(releaseNotes.content, sprintNumber);
+      steps.push("Saved to file");
+    }
+
+    // Publish to Confluence if requested
+    if (output === "confluence" || output === "both") {
+      // Generate Confluence-specific content
+      const htmlFormatter = new HtmlFormatter("modern");
+      const confluenceContent = htmlFormatter.formatForConfluence(jiraIssues, commits, sprintNumber);
+      await this.confluenceService.publishPage(confluenceContent, sprintNumber);
+      steps.push("Published to Confluence");
+    }
+
+    // Send Teams notification if requested
+    if (notifyTeams) {
+      const markdownContent = await this.generateReleaseNotes({
+        sprintNumber,
+        date,
+        format: "markdown",
+      });
+      await this.teamsService.sendNotification(
+        "🚀 New release notes published",
+        markdownContent.content
+      );
+      steps.push("Sent Teams notification");
+    }
+
+    return {
+      summary: `Release notes workflow completed for ${sprintNumber ? `sprint ${sprintNumber}` : "latest changes"}`,
+      steps,
+      stats: releaseNotes.stats,
+    };
+  }
+}

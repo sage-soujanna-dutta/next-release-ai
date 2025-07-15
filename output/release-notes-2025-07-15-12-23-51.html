@@ -1,0 +1,1058 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Release Notes - Sprint 2025-07-15</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8fafc;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+            padding: 3rem 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.15);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="25" cy="25" r="1" fill="white" opacity="0.1"/><circle cx="75" cy="75" r="1" fill="white" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>');
+            opacity: 0.1;
+        }
+        
+        .header-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            font-weight: 800;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header-meta {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+        
+        .header-meta p {
+            background: rgba(255,255,255,0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            margin: 0;
+        }
+        
+        .date, .project {
+            opacity: 0.95;
+            font-size: 1rem;
+            font-weight: 500;
+        }
+        
+        .section {
+            background: white;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+        }
+        
+        .section h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1.5rem;
+            color: #2d3748;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 0.5rem;
+        }
+        
+        .summary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .summary h2 {
+            color: white;
+            border-bottom: 3px solid rgba(255,255,255,0.3);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .stat-card {
+            background: rgba(255,255,255,0.95);
+            padding: 2rem;
+            border-radius: 16px;
+            text-align: center;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.2);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 48px rgba(0,0,0,0.15);
+        }
+        
+        .stat-card.primary { border-left: 5px solid #667eea; }
+        .stat-card.secondary { border-left: 5px solid #764ba2; }
+        .stat-card.success { border-left: 5px solid #48bb78; }
+        .stat-card.info { border-left: 5px solid #4299e1; }
+        
+        .stat-icon {
+            font-size: 2.5rem;
+            color: #667eea;
+            min-width: 60px;
+        }
+        
+        .stat-content {
+            text-align: left;
+            flex: 1;
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #2d3748;
+            line-height: 1;
+        }
+        
+        .stat-label {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-sublabel {
+            font-size: 0.9rem;
+            color: #718096;
+            opacity: 0.8;
+        }
+        
+        .breakdown {
+            margin-top: 1.5rem;
+        }
+        
+        .breakdown h3 {
+            margin-bottom: 1rem;
+            font-size: 1.2rem;
+        }
+        
+        .breakdown-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        
+        .breakdown-item {
+            background: rgba(255,255,255,0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+        }
+        
+        .issue-type-section {
+            margin-bottom: 2rem;
+        }
+        
+        .issue-type-section h3 {
+            font-size: 1.4rem;
+            margin-bottom: 1rem;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .issues-list, .commits-list {
+            display: grid;
+            gap: 1rem;
+        }
+        
+        .issue-item, .commit-item {
+            padding: 1.5rem;
+            background: #f7fafc;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            transition: all 0.2s ease;
+        }
+        
+        .issue-item:hover, .commit-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        
+        .issue-header, .commit-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .issue-key, .commit-sha {
+            font-weight: bold;
+            color: #667eea;
+            text-decoration: none;
+            font-family: monospace;
+            background: #e2e8f0;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+        }
+        
+        .issue-key:hover, .commit-sha:hover {
+            background: #cbd5e0;
+        }
+        
+        .issue-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-done { background: #c6f6d5; color: #22543d; }
+        .status-progress { background: #fed7d7; color: #742a2a; }
+        .status-todo { background: #e2e8f0; color: #2d3748; }
+        .status-testing { background: #fef5e7; color: #744210; }
+        .status-review { background: #e6fffa; color: #234e52; }
+        .status-default { background: #e2e8f0; color: #4a5568; }
+        
+        .issue-summary, .commit-message {
+            font-size: 1rem;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+        
+        .issue-assignee, .commit-author, .commit-date {
+            font-size: 0.9rem;
+            color: #718096;
+        }
+        
+        .priority-icon {
+            font-size: 1rem;
+        }
+        
+        .no-items {
+            text-align: center;
+            color: #718096;
+            font-style: italic;
+            padding: 2rem;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 3rem;
+            padding: 2rem;
+            color: #718096;
+            font-size: 0.9rem;
+        }
+        
+        .sprint-header {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .sprint-header h3 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+        
+        .sprint-description {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            line-height: 1.6;
+        }
+        
+        .detailed-stats {
+            background: white;
+            margin-bottom: 2rem;
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+            border: 1px solid #e2e8f0;
+        }
+        
+        .stats-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3rem;
+            margin-bottom: 3rem;
+        }
+        
+        .stats-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .stats-column {
+            background: #f8fafc;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .stats-column.full-width {
+            grid-column: 1 / -1;
+        }
+        
+        .stats-column h3 {
+            font-size: 1.4rem;
+            margin-bottom: 1.5rem;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .status-chart, .priority-chart, .contributors-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .status-bar {
+            flex: 1;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .status-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+        
+        .status-fill.status-done { background: #48bb78; }
+        .status-fill.status-progress { background: #ed8936; }
+        .status-fill.status-todo { background: #718096; }
+        .status-fill.status-testing { background: #4299e1; }
+        .status-fill.status-review { background: #9f7aea; }
+        .status-fill.status-default { background: #a0aec0; }
+        
+        .status-info {
+            display: flex;
+            flex-direction: column;
+            min-width: 120px;
+            text-align: right;
+        }
+        
+        .status-name {
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .status-count {
+            font-size: 0.9rem;
+            color: #718096;
+        }
+        
+        .priority-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .priority-icon {
+            font-size: 1.2rem;
+            min-width: 24px;
+        }
+        
+        .priority-name {
+            flex: 1;
+            font-weight: 500;
+            color: #2d3748;
+        }
+        
+        .priority-count {
+            font-weight: 600;
+            color: #667eea;
+            background: #edf2f7;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.9rem;
+        }
+        
+        .contributor-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+        
+        .contributor-avatar {
+            width: 40px;
+            height: 40px;
+            background: #667eea;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 1.2rem;
+        }
+        
+        .contributor-info {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .contributor-name {
+            font-weight: 600;
+            color: #2d3748;
+        }
+        
+        .contributor-commits {
+            font-size: 0.9rem;
+            color: #718096;
+        }
+        
+        .contributor-bar {
+            width: 100px;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .contributor-fill {
+            height: 100%;
+            background: #667eea;
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+    
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <div class="header-content">
+                <h1><i class="fas fa-rocket"></i> Sprint 2025-07-15 - Release Notes</h1>
+                <div class="header-meta">
+                    <p class="date"><i class="fas fa-calendar"></i> Generated on 7/15/2025, 5:53:51 PM</p>
+                    <p class="project"><i class="fas fa-project-diagram"></i> Sage Connect Project</p>
+                </div>
+            </div>
+        </header>
+        
+        
+        <section class="summary">
+            <h2><i class="fas fa-chart-pie"></i> Sprint Overview</h2>
+            <div class="sprint-header">
+                <h3>Sprint 2025-07-15</h3>
+                <p class="sprint-description">Comprehensive overview of deliverables, improvements, and technical achievements for this sprint cycle.</p>
+            </div>
+            
+            <div class="stats-grid">
+                <div class="stat-card primary">
+                    <div class="stat-icon"><i class="fas fa-tasks"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-number">0</div>
+                        <div class="stat-label">Total Issues</div>
+                        <div class="stat-sublabel">JIRA Tickets Processed</div>
+                    </div>
+                </div>
+                <div class="stat-card secondary">
+                    <div class="stat-icon"><i class="fas fa-code-branch"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-number">30</div>
+                        <div class="stat-label">Code Commits</div>
+                        <div class="stat-sublabel">Git Repository Changes</div>
+                    </div>
+                </div>
+                <div class="stat-card success">
+                    <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-number">0</div>
+                        <div class="stat-label">Completed</div>
+                        <div class="stat-sublabel">Ready for Production</div>
+                    </div>
+                </div>
+                <div class="stat-card info">
+                    <div class="stat-icon"><i class="fas fa-list"></i></div>
+                    <div class="stat-content">
+                        <div class="stat-number">0</div>
+                        <div class="stat-label">Issue Types</div>
+                        <div class="stat-sublabel">Categories Covered</div>
+                    </div>
+                </div>
+            </div>
+            
+            
+        </section>
+    
+        
+        <section class="detailed-stats">
+            <h2><i class="fas fa-analytics"></i> Detailed Analytics</h2>
+            
+            <div class="stats-row">
+                <div class="stats-column">
+                    <h3><i class="fas fa-traffic-light"></i> Status Distribution</h3>
+                    <div class="status-chart">
+                        
+                    </div>
+                </div>
+                
+                <div class="stats-column">
+                    <h3><i class="fas fa-exclamation-triangle"></i> Priority Breakdown</h3>
+                    <div class="priority-chart">
+                        
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stats-row">
+                <div class="stats-column full-width">
+                    <h3><i class="fas fa-users"></i> Top Contributors</h3>
+                    <div class="contributors-chart">
+                        
+                            <div class="contributor-item">
+                                <div class="contributor-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="contributor-info">
+                                    <span class="contributor-name">Vikash Chauhan</span>
+                                    <span class="contributor-commits">8 commits</span>
+                                </div>
+                                <div class="contributor-bar">
+                                    <div class="contributor-fill" style="width: 100%"></div>
+                                </div>
+                            </div>
+                        
+                            <div class="contributor-item">
+                                <div class="contributor-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="contributor-info">
+                                    <span class="contributor-name">Biplav Adhikary</span>
+                                    <span class="contributor-commits">2 commits</span>
+                                </div>
+                                <div class="contributor-bar">
+                                    <div class="contributor-fill" style="width: 25%"></div>
+                                </div>
+                            </div>
+                        
+                            <div class="contributor-item">
+                                <div class="contributor-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="contributor-info">
+                                    <span class="contributor-name">Karan Ahir</span>
+                                    <span class="contributor-commits">2 commits</span>
+                                </div>
+                                <div class="contributor-bar">
+                                    <div class="contributor-fill" style="width: 25%"></div>
+                                </div>
+                            </div>
+                        
+                            <div class="contributor-item">
+                                <div class="contributor-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="contributor-info">
+                                    <span class="contributor-name">Arun Ghante</span>
+                                    <span class="contributor-commits">7 commits</span>
+                                </div>
+                                <div class="contributor-bar">
+                                    <div class="contributor-fill" style="width: 87.5%"></div>
+                                </div>
+                            </div>
+                        
+                            <div class="contributor-item">
+                                <div class="contributor-avatar">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <div class="contributor-info">
+                                    <span class="contributor-name">Manish Narayan B S</span>
+                                    <span class="contributor-commits">1 commit</span>
+                                </div>
+                                <div class="contributor-bar">
+                                    <div class="contributor-fill" style="width: 12.5%"></div>
+                                </div>
+                            </div>
+                        
+                    </div>
+                </div>
+            </div>
+        </section>
+    
+        <section class="section"><h2>📋 JIRA Issues</h2><p class="no-items">No JIRA issues found for this release.</p></section>
+        
+        <section class="section">
+            <h2>📦 Commits</h2>
+            <div class="commits-list">
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">7a0ac921</span>
+                            <span class="commit-author">Vikash Chauhan</span>
+                            <span class="commit-date">7/11/2025</span>
+                        </div>
+                        <div class="commit-message">Added token validation conditions (#2047)</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">55b3c100</span>
+                            <span class="commit-author">Biplav Adhikary</span>
+                            <span class="commit-date">7/11/2025</span>
+                        </div>
+                        <div class="commit-message">[SCNT-4430, SCNT-4529, SCNT-4179] Enhancements: Portal Link Automation Def Freq, A11Y Heading Structure, Fixes (#2046)
+
+### [SCNT-4430, SCNT-4529, SCNT-4179] Enhancements: Portal Link
+Automation Def Freq, A11Y Heading Structure, Fixes
+
+Enhanced default frequency handling in automation rules, improves
+accessibility by updating heading structures across components, and
+includes miscellaneous fixes like import corrections and loader
+integrations.
+
+**Changelog** 
+
+- Added `InviteCustomer` to the default frequency switch for email
+templates.
+- Updated various Typography components with proper component props and
+ARIA attributes for heading hierarchy.
+- Tweaked modal/dialog props, consolidated imports, and added loader
+elements for better UX.</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">7c91a5c1</span>
+                            <span class="commit-author">Karan Ahir</span>
+                            <span class="commit-date">7/11/2025</span>
+                        </div>
+                        <div class="commit-message">Accessibility for SelectDatasets and Selection pages (#2039)
+
+<img width="1880" height="792" alt="Screenshot 2025-07-10 at 7 33 53 PM"
+src="https://github.com/user-attachments/assets/bb3a8a04-f336-4177-94ef-8b3b8f624870"
+/></div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">c45f5e5c</span>
+                            <span class="commit-author">Vikash Chauhan</span>
+                            <span class="commit-date">7/11/2025</span>
+                        </div>
+                        <div class="commit-message">Bug token validation (#2045)</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">e1830b6b</span>
+                            <span class="commit-author">Arun Ghante</span>
+                            <span class="commit-date">7/11/2025</span>
+                        </div>
+                        <div class="commit-message">Added default API version as v4 and also renamed the GetAuth0UserId method to GetUserId (#2044)</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">2112f6ac</span>
+                            <span class="commit-author">Manish Narayan B S</span>
+                            <span class="commit-date">7/11/2025</span>
+                        </div>
+                        <div class="commit-message">SCNT - 4647 | Hotfix | handle suppression issue (#2043)
+
+Changes - 
+
+1. Remove unnecessary update of last_exec_at
+2. Handle issue in Customer Suppression delete
+3. Elevate - upgrade nokogiri
+
+Testing - 
+
+<img width="1090" height="758" alt="Screenshot 2025-07-11 at 12 16
+14 PM"
+src="https://github.com/user-attachments/assets/38456deb-5d99-47de-8215-6fd856e9372e"
+/></div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">b906eb16</span>
+                            <span class="commit-author">Vikash Chauhan</span>
+                            <span class="commit-date">7/11/2025</span>
+                        </div>
+                        <div class="commit-message">Added unit tests (#2042)</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">6869380e</span>
+                            <span class="commit-author">Rajesh Kumar</span>
+                            <span class="commit-date">7/11/2025</span>
+                        </div>
+                        <div class="commit-message">SCNT-4302 | Enhancement | update automation modal actions (#2040)
+
+Fixes: https://jira.sage.com/browse/SCNT-4302
+
+Change logs:
+- Update disable automation action styling
+- Update logic of automation footer action
+- Add missing template code for payment due reminders</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">9a462834</span>
+                            <span class="commit-author">Vikash Chauhan</span>
+                            <span class="commit-date">7/11/2025</span>
+                        </div>
+                        <div class="commit-message">Added Repository unit tests (#2038)</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">893f25b7</span>
+                            <span class="commit-author">Biplav Adhikary</span>
+                            <span class="commit-date">7/10/2025</span>
+                        </div>
+                        <div class="commit-message">[SCNT-4200, SCNT-4222, SCNT-4179] Enhancements: Invoice Details | PDF Generation, Responsiveness, Aesthetic Updates (#2036)
+
+### [SCNT-4200, SCNT-4222, SCNT-4179] Enhancements: Invoice Details |
+PDF Generation, Responsiveness, Aesthetic Updates
+
+**Changelog**
+
+- Invoice PDF Generation Support
+- Added print support for some UI components
+- Added Responsiveness for Invoice Details
+- UI layout updates
+- Skeleton updates
+- Refactored some code and types</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">5e90e6cf</span>
+                            <span class="commit-author">Karan Ahir</span>
+                            <span class="commit-date">7/10/2025</span>
+                        </div>
+                        <div class="commit-message">Addressed accessibility issues for batch consent and batch review screen (#2035)</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">e5e73891</span>
+                            <span class="commit-author">Debraj Sengupta</span>
+                            <span class="commit-date">7/10/2025</span>
+                        </div>
+                        <div class="commit-message">SNEC-521 : Fixed disabled dropdown for manage subs (#2037)
+
+SNEC-521 : Fixed disabled dropdown for manage subs</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">cd3d3a92</span>
+                            <span class="commit-author">Carlos Crego Sanchez</span>
+                            <span class="commit-date">7/10/2025</span>
+                        </div>
+                        <div class="commit-message">Codeql analysis event driven (#2026)</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">61ea2ee4</span>
+                            <span class="commit-author">Abhishek Kushwaha</span>
+                            <span class="commit-date">7/10/2025</span>
+                        </div>
+                        <div class="commit-message">SCNT-3702 - changed "Sage Connect" to "Sage" in Notification service (#2034)
+
+### Local Sanity
+
+<img width="944" height="620" alt="Screenshot 2025-07-10 at 4 31 25 PM"
+src="https://github.com/user-attachments/assets/85e40f49-8ce2-46d1-ab01-c280360b5a0d"
+/>
+<img width="944" height="754" alt="Screenshot 2025-07-10 at 4 30 26 PM"
+src="https://github.com/user-attachments/assets/daaafe52-3bbb-4bd4-ab38-a3c6acd34caa"
+/>
+<img width="810" height="566" alt="Screenshot 2025-07-10 at 4 29 35 PM"
+src="https://github.com/user-attachments/assets/449946fa-e490-4544-ad17-a0e4d1f8f784"
+/>
+<img width="755" height="629" alt="Screenshot 2025-07-10 at 4 28 54 PM"
+src="https://github.com/user-attachments/assets/95be305a-9d22-4386-a332-b8f4982dfa8f"
+/>
+<img width="755" height="629" alt="Screenshot 2025-07-10 at 4 28 37 PM"
+src="https://github.com/user-attachments/assets/094e7a68-77f8-4567-ae46-252652d99f0c"
+/></div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">e2a74b07</span>
+                            <span class="commit-author">Vikash Chauhan</span>
+                            <span class="commit-date">7/10/2025</span>
+                        </div>
+                        <div class="commit-message">Added unit tests (#2033)</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">58992ff7</span>
+                            <span class="commit-author">Arun Ghante</span>
+                            <span class="commit-date">7/10/2025</span>
+                        </div>
+                        <div class="commit-message">Added Swagger filters to hide unwanted routes and schemas (#2031)</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">ff959c55</span>
+                            <span class="commit-author">Rajesh Kumar</span>
+                            <span class="commit-date">7/10/2025</span>
+                        </div>
+                        <div class="commit-message">[SCNT-2338,SCNT-2943,SCNT-2966,SCNT-4303] | Enhancements | Enhance messaging components styles and behaviour (#2030)
+
+Fixes:
+https://jira.sage.com/browse/SCNT-2338
+https://jira.sage.com/browse/SCNT-2943
+https://jira.sage.com/browse/SCNT-2966
+https://jira.sage.com/browse/SCNT-4303
+
+Change logs:
+- Update message history header skeleton
+- Remove automation icon from customer details ellipsis menu
+- Update scrollbar behaviour of message history and note history
+- Add keyboard shortcut for editor link</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">c9a95cf2</span>
+                            <span class="commit-author">Arun Ghante</span>
+                            <span class="commit-date">7/10/2025</span>
+                        </div>
+                        <div class="commit-message">Migrated aggregated visit logs route from Ruby to C# (#2023)
+
+Co-authored-by: Copilot <175728472+Copilot@users.noreply.github.com></div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">b7345000</span>
+                            <span class="commit-author">Vikash Chauhan</span>
+                            <span class="commit-date">7/10/2025</span>
+                        </div>
+                        <div class="commit-message">Unit tests part3 (#2029)</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">431e78d5</span>
+                            <span class="commit-author">Ashish K</span>
+                            <span class="commit-date">7/10/2025</span>
+                        </div>
+                        <div class="commit-message">[SCNT-3306] | Table config destroy API added (#2027)
+
+Co-authored-by: Ashish <ashish@lockstep.io></div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">5ebb3bf2</span>
+                            <span class="commit-author">Debraj Sengupta</span>
+                            <span class="commit-date">7/10/2025</span>
+                        </div>
+                        <div class="commit-message">Minimize Loading Gap between save config and table update (#2024)
+
+Minimize Loading Gap between save config and table update</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">822782ca</span>
+                            <span class="commit-author">Abhishek Kushwaha</span>
+                            <span class="commit-date">7/9/2025</span>
+                        </div>
+                        <div class="commit-message">SCNT-4516 | Rule Engine (Phase 1) (#1981)</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">48e3d184</span>
+                            <span class="commit-author">Debraj Sengupta</span>
+                            <span class="commit-date">7/9/2025</span>
+                        </div>
+                        <div class="commit-message">SCNT-4675: Incorrect Icon Size for Drag Icon Fix (#2021)
+
+SCNT-4675: Incorrect Icon Size for Drag Icon Fix</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">4ee4b500</span>
+                            <span class="commit-author">Arun Ghante</span>
+                            <span class="commit-date">7/9/2025</span>
+                        </div>
+                        <div class="commit-message">Added Authorization policy for some missing controllers (#2018)</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">3af5e4e2</span>
+                            <span class="commit-author">Vikash Chauhan</span>
+                            <span class="commit-date">7/9/2025</span>
+                        </div>
+                        <div class="commit-message">Added  Auth unit tests (#2020)</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">f1244b59</span>
+                            <span class="commit-author">Carlos Crego Sanchez</span>
+                            <span class="commit-date">7/9/2025</span>
+                        </div>
+                        <div class="commit-message">Fix issue with variable expansion in shell action (#2019)</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">261fc248</span>
+                            <span class="commit-author">Arun Ghante</span>
+                            <span class="commit-date">7/9/2025</span>
+                        </div>
+                        <div class="commit-message">Updated content security policy (#2017)</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">7c1d7ced</span>
+                            <span class="commit-author">Arun Ghante</span>
+                            <span class="commit-date">7/9/2025</span>
+                        </div>
+                        <div class="commit-message">Added attribute AuthenticationScheme for  M2mUserSettingsController and fixed some unit tests (#2015)</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">83964ebb</span>
+                            <span class="commit-author">Arun Ghante</span>
+                            <span class="commit-date">7/9/2025</span>
+                        </div>
+                        <div class="commit-message">C# migration of m2m/user_settings route using OData (#2013)</div>
+                    </div>
+                
+                    <div class="commit-item">
+                        <div class="commit-header">
+                            <span class="commit-sha">b49a53e1</span>
+                            <span class="commit-author">Vikash Chauhan</span>
+                            <span class="commit-date">7/9/2025</span>
+                        </div>
+                        <div class="commit-message">SCNT-4590 | Added unit tests for Logging and Common projects (#2014)</div>
+                    </div>
+                
+            </div>
+        </section>
+    
+        
+        <footer class="footer">
+            <div class="footer-content">
+                <p><i class="fas fa-cog"></i> Generated automatically by Release MCP Server</p>
+                <p><i class="fas fa-code-branch"></i> Repository: Sage/sage-connect</p>
+                <p><i class="fas fa-jira"></i> JIRA Board: 6335</p>
+            </div>
+        </footer>
+    </div>
+    
+    <script>
+        // Add interactivity
+        document.addEventListener('DOMContentLoaded', function() {
+            // Expandable sections
+            document.querySelectorAll('.expandable').forEach(section => {
+                section.addEventListener('click', function() {
+                    this.classList.toggle('expanded');
+                });
+            });
+            
+            // Smooth scroll for navigation
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute('href')).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,28 +1,119 @@
-name: Release Notes Generator
+name: Automated Release Notes
 
 on:
   schedule:
-    - cron: '0 10 */14 * 5'
+    # Run every Friday at 5 PM UTC (adjust timezone as needed)
+    - cron: '0 17 * * 5'
   workflow_dispatch:
+    inputs:
+      sprint_number:
+        description: 'Sprint number (optional)'
+        required: false
+        type: string
+      date:
+        description: 'Date to fetch commits from (ISO format, optional)'
+        required: false
+        type: string
+      output:
+        description: 'Output destination'
+        required: false
+        type: choice
+        options:
+          - both
+          - confluence
+          - file
+        default: both
+      notify_teams:
+        description: 'Send Teams notification'
+        required: false
+        type: boolean
+        default: true
 
 jobs:
-  generate:
+  generate-release-notes:
     runs-on: ubuntu-latest
+    
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-      - name: Install dependencies
-        run: npm ci
-      - name: Run MCP script
-        env:
-          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
-          JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
-          JIRA_DOMAIN: ${{ secrets.JIRA_DOMAIN }}
-          CONFLUENCE_SPACE: ${{ secrets.CONFLUENCE_SPACE }}
-          CONFLUENCE_PARENT_PAGE_ID: ${{ secrets.CONFLUENCE_PARENT_PAGE_ID }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: npx tsx scripts/postToConfluence.ts
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build MCP server
+      run: npm run build
+      
+    - name: Generate and publish release notes
+      env:
+        JIRA_DOMAIN: ${{ secrets.JIRA_DOMAIN }}
+        JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+        JIRA_BOARD_ID: ${{ secrets.JIRA_BOARD_ID }}
+        JIRA_SPRINT_NUMBER: ${{ github.event.inputs.sprint_number || secrets.DEFAULT_SPRINT_NUMBER }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        CONFLUENCE_USERNAME: ${{ secrets.CONFLUENCE_USERNAME }}
+        CONFLUENCE_PAT: ${{ secrets.CONFLUENCE_PAT }}
+        CONFLUENCE_SPACE: ${{ secrets.CONFLUENCE_SPACE }}
+        JIRA_CONFLUENCE_DOMAIN: ${{ secrets.JIRA_CONFLUENCE_DOMAIN }}
+        TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+        JIRA_FETCH_COMMITS_DATE: ${{ github.event.inputs.date }}
+        OUTPUT_DIR: ./output
+      run: |
+        echo "Generating release notes..."
+        npm run start -- create_release_workflow \
+          --sprintNumber="${{ github.event.inputs.sprint_number || secrets.DEFAULT_SPRINT_NUMBER }}" \
+          --date="${{ github.event.inputs.date }}" \
+          --output="${{ github.event.inputs.output || 'both' }}" \
+          --notifyTeams="${{ github.event.inputs.notify_teams || 'true' }}"
+          
+    - name: Upload release notes artifacts
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: release-notes-${{ github.run_number }}
+        path: |
+          output/*.html
+          output/*.md
+        retention-days: 30
+
+  validate-configuration:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build MCP server
+      run: npm run build
+      
+    - name: Validate configuration
+      env:
+        JIRA_DOMAIN: ${{ secrets.JIRA_DOMAIN }}
+        JIRA_TOKEN: ${{ secrets.JIRA_TOKEN }}
+        JIRA_BOARD_ID: ${{ secrets.JIRA_BOARD_ID }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        CONFLUENCE_USERNAME: ${{ secrets.CONFLUENCE_USERNAME }}
+        CONFLUENCE_PAT: ${{ secrets.CONFLUENCE_PAT }}
+        CONFLUENCE_SPACE: ${{ secrets.CONFLUENCE_SPACE }}
+        JIRA_CONFLUENCE_DOMAIN: ${{ secrets.JIRA_CONFLUENCE_DOMAIN }}
+        TEAMS_WEBHOOK_URL: ${{ secrets.TEAMS_WEBHOOK_URL }}
+      run: |
+        echo "Validating configuration..."
+        npm run start -- validate_configuration
