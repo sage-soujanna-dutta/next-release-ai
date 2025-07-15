@@ -4,12 +4,12 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-export async function fetchCommits() {
+export async function fetchCommits(date: string) {
   const repo = process.env.GITHUB_REPOSITORY!;
   const token = process.env.GITHUB_TOKEN!;
 
   // Get last Friday (even if today is Friday)
-  const today = dayjs();
+  const today = dayjs(date);
   const lastFriday =
     today.day() >= 5 ? today.day(5) : today.subtract(1, "week").day(5);
   const since = lastFriday.startOf("day").toISOString();
