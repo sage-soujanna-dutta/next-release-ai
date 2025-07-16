@@ -3,8 +3,8 @@ import { GitHubCommit } from "../services/GitHubService.js";
 export declare class HtmlFormatter {
     private theme;
     constructor(theme?: string);
-    format(jiraIssues: JiraIssue[], commits: GitHubCommit[], sprintName?: string): string;
-    formatForConfluence(jiraIssues: JiraIssue[], commits: GitHubCommit[], sprintName?: string): string;
+    format(jiraIssues: JiraIssue[], commits: GitHubCommit[], sprintName?: string, buildPipelineData?: any[]): string;
+    formatForConfluence(jiraIssues: JiraIssue[], commits: GitHubCommit[], sprintName?: string, buildPipelineData?: any[]): string;
     private generateSummary;
     private generateSummaryForConfluence;
     private formatJiraIssues;
@@ -39,4 +39,10 @@ export declare class HtmlFormatter {
     private generateConclusionForConfluence;
     private getTopAchievements;
     private getRecommendations;
+    formatBuildPipelines(pipelineData: any[], sprintName?: string): string;
+    private formatLatestBuildRow;
+    formatBuildPipelinesForConfluence(pipelineData: any[], sprintName?: string): string;
+    private getBuildStatusIcon;
+    private getBuildStatusIconForConfluence;
+    private getBuildStatusClass;
 }

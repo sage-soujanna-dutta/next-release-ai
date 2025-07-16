@@ -3,7 +3,7 @@ export class HtmlFormatter {
     constructor(theme = "modern") {
         this.theme = theme;
     }
-    format(jiraIssues, commits, sprintName) {
+    format(jiraIssues, commits, sprintName, buildPipelineData) {
         const css = this.getThemeCSS();
         const sprintTitle = sprintName || `Sprint ${new Date().toISOString().split('T')[0]}`;
         const jiraContent = this.formatJiraIssues(jiraIssues);
@@ -12,6 +12,7 @@ export class HtmlFormatter {
         const detailedStats = this.generateDetailedStats(jiraIssues, commits);
         const aiSummary = this.generateAISummary(jiraIssues, commits, sprintTitle);
         const conclusion = this.generateConclusion(jiraIssues, commits, sprintTitle);
+        const buildPipelineContent = this.formatBuildPipelines(buildPipelineData || [], sprintTitle);
         return `
 <!DOCTYPE html>
 <html lang="en">
@@ -40,6 +41,7 @@ export class HtmlFormatter {
         ${summary}
         ${detailedStats}
         ${conclusion}
+        ${buildPipelineContent}
         ${jiraContent}
         ${commitsContent}
         
@@ -93,13 +95,14 @@ export class HtmlFormatter {
 </html>
     `.trim();
     }
-    formatForConfluence(jiraIssues, commits, sprintName) {
+    formatForConfluence(jiraIssues, commits, sprintName, buildPipelineData) {
         const sprintTitle = sprintName || `Sprint ${new Date().toISOString().split('T')[0]}`;
         const jiraContent = this.formatJiraIssuesForConfluence(jiraIssues);
         const commitsContent = this.formatCommitsForConfluence(commits);
         const summary = this.generateSummaryForConfluence(jiraIssues, commits, sprintTitle);
         const aiSummary = this.generateAISummaryForConfluence(jiraIssues, commits, sprintTitle);
         const conclusion = this.generateConclusionForConfluence(jiraIssues, commits, sprintTitle);
+        const buildPipelineContent = this.formatBuildPipelinesForConfluence(buildPipelineData || [], sprintTitle);
         return `
 <div class="release-notes-confluence">
 <h1>🚀 ${sprintTitle} - Release Notes</h1>
@@ -143,6 +146,10 @@ ${commitsContent}
 ${conclusion}
 </ac:rich-text-body>
 </ac:structured-macro>
+
+<hr/>
+
+${buildPipelineContent}
 
 <div class="footer-info">
 <p><em>🤖 Generated automatically by Release MCP Server</em></p>
@@ -1412,8 +1419,8 @@ ${conclusion}
             align-items: center;
             justify-content: space-between;
             margin-bottom: 1.5rem;
-            padding-bottom: 1rem;
-            border-bottom: 2px solid #00DC64;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #00DC64;
         }
 
         .component-header h3 {
@@ -1683,6 +1690,174 @@ ${conclusion}
             margin: 0;
             font-size: 0.9rem;
         }
+
+        /* Build Pipeline Styles */
+        .builds-overview {
+            margin-bottom: 2rem;
+        }
+
+        .build-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .pipelines-container {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        .pipeline-latest-builds {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid rgba(255,255,255,0.1);
+            margin-top: 1.5rem;
+        }
+
+        .pipeline-latest-builds h3 {
+            color: #FFFFFF;
+            margin: 0 0 1rem 0;
+            font-size: 1.1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .pipeline-name {
+            font-weight: 600;
+            color: #FFFFFF;
+        }
+
+        .pipeline-title {
+            font-size: 0.9rem;
+            color: #E0E7FF;
+        }
+
+        .build-count {
+            background: rgba(60,134,244,0.2);
+            color: #3C86F4;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .builds-table {
+            overflow-x: auto;
+        }
+
+        .builds-table-content {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .builds-table-content th {
+            color: #CCCCCC;
+            text-align: left;
+            padding: 0.75rem 0.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            font-weight: 500;
+        }
+
+        .builds-table-content td {
+            padding: 0.75rem 0.5rem;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+            color: #FFFFFF;
+        }
+
+        .build-row:hover {
+            background: rgba(255,255,255,0.05);
+        }
+
+        .build-number {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+        }
+
+        .build-id {
+            color: #3C86F4;
+        }
+
+        .build-date {
+            color: #CCCCCC;
+            font-size: 0.85rem;
+        }
+
+        .branch-name {
+            background: rgba(0,220,100,0.1);
+            color: #00DC64;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.8rem;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-success {
+            background: rgba(0,135,90,0.2);
+            color: #00875A;
+        }
+
+        .status-failed {
+            background: rgba(222,53,11,0.2);
+            color: #DE350B;
+        }
+
+        .status-warning {
+            background: rgba(255,139,0,0.2);
+            color: #FF8B00;
+        }
+
+        .status-canceled {
+            background: rgba(107,119,140,0.2);
+            color: #6B778C;
+        }
+
+        .status-progress {
+            background: rgba(0,82,204,0.2);
+            color: #0052CC;
+        }
+
+        .status-pending {
+            background: rgba(107,119,140,0.2);
+            color: #6B778C;
+        }
+
+        .status-unknown {
+            background: rgba(107,119,140,0.2);
+            color: #6B778C;
+        }
+
+        .build-url {
+            color: #3C86F4;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .build-url:hover {
+            background: rgba(60,134,244,0.1);
+            color: #FFFFFF;
+        }
     `;
         return baseCSS;
     }
@@ -1938,5 +2113,251 @@ ${this.getRecommendations(jiraIssues, commits, completionRate).map(rec => `<li>$
             recommendations.push("🔧 High bug count detected - focus on code quality and testing processes");
         }
         return recommendations.slice(0, 3);
+    }
+    // Build Pipeline Methods
+    formatBuildPipelines(pipelineData, sprintName) {
+        if (!pipelineData || pipelineData.length === 0) {
+            return `
+        <section class="section">
+            <h2><i class="fas fa-hammer"></i> Build Pipelines</h2>
+            <p class="no-items">No build pipeline data available for this release.</p>
+        </section>`;
+        }
+        // Get latest build for each pipeline
+        const latestBuilds = pipelineData.map(pipeline => {
+            const latestBuild = pipeline.builds.length > 0 ? pipeline.builds[0] : null;
+            return {
+                pipelineName: pipeline.name,
+                build: latestBuild
+            };
+        }).filter(item => item.build !== null);
+        // If we have pipelines but no builds, show a different message
+        if (latestBuilds.length === 0) {
+            return `
+        <section class="section">
+            <h2><i class="fas fa-hammer"></i> Build Pipelines</h2>
+            <p class="no-items">Found ${pipelineData.length} pipeline(s) but no recent builds matching the sprint criteria.</p>
+            <div class="pipeline-names">
+                <h4>Monitored Pipelines:</h4>
+                <ul>
+                    ${pipelineData.map(p => `<li>${p.name}</li>`).join('')}
+                </ul>
+            </div>
+        </section>`;
+        }
+        const successfulBuilds = latestBuilds.filter(item => item.build.result === 'succeeded').length;
+        const failedBuilds = latestBuilds.filter(item => item.build.result === 'failed').length;
+        const inProgressBuilds = latestBuilds.filter(item => item.build.status === 'inProgress').length;
+        return `
+        <section class="section">
+            <h2><i class="fas fa-hammer"></i> Build Pipelines</h2>
+            <div class="builds-overview">
+                <p class="section-subtitle">Latest deployment pipeline status for ${sprintName || 'this sprint'}</p>
+                
+                <div class="build-stats-grid">
+                    <div class="stat-card success">
+                        <div class="stat-icon"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-number">${successfulBuilds}</div>
+                            <div class="stat-label">Successful</div>
+                        </div>
+                    </div>
+                    <div class="stat-card danger">
+                        <div class="stat-icon"><i class="fas fa-times-circle"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-number">${failedBuilds}</div>
+                            <div class="stat-label">Failed</div>
+                        </div>
+                    </div>
+                    <div class="stat-card warning">
+                        <div class="stat-icon"><i class="fas fa-spinner"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-number">${inProgressBuilds}</div>
+                            <div class="stat-label">In Progress</div>
+                        </div>
+                    </div>
+                    <div class="stat-card info">
+                        <div class="stat-icon"><i class="fas fa-cogs"></i></div>
+                        <div class="stat-content">
+                            <div class="stat-number">${pipelineData.length}</div>
+                            <div class="stat-label">Total Pipelines</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pipeline-latest-builds">
+                <h3><i class="fas fa-clock"></i> Latest Builds Summary</h3>
+                <div class="builds-table">
+                    <table class="builds-table-content">
+                        <thead>
+                            <tr>
+                                <th><i class="fas fa-project-diagram"></i> Pipeline</th>
+                                <th><i class="fas fa-hashtag"></i> Build #</th>
+                                <th><i class="fas fa-calendar"></i> Date</th>
+                                <th><i class="fas fa-code-branch"></i> Branch</th>
+                                <th><i class="fas fa-traffic-light"></i> Status</th>
+                                <th><i class="fas fa-external-link-alt"></i> Link</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${latestBuilds.map(item => this.formatLatestBuildRow(item)).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>`;
+    }
+    formatLatestBuildRow(item) {
+        const build = item.build;
+        const statusIcon = this.getBuildStatusIcon(build.result || build.status);
+        const statusClass = this.getBuildStatusClass(build.result || build.status);
+        const date = new Date(build.queueTime).toLocaleDateString();
+        const branchName = build.sourceBranch ? build.sourceBranch.replace('refs/heads/', '') : 'Unknown';
+        return `
+        <tr class="build-row">
+            <td class="pipeline-name">
+                <span class="pipeline-title">${item.pipelineName}</span>
+            </td>
+            <td class="build-number">
+                <span class="build-id">#${build.buildNumber}</span>
+            </td>
+            <td class="build-date">${date}</td>
+            <td class="build-branch">
+                <span class="branch-name">${branchName}</span>
+            </td>
+            <td class="build-status">
+                <span class="status-badge ${statusClass}">
+                    ${statusIcon} ${build.result || build.status}
+                </span>
+            </td>
+            <td class="build-link">
+                ${build.webUrl ? `<a href="${build.webUrl}" target="_blank" class="build-url">
+                    <i class="fas fa-external-link-alt"></i> View
+                </a>` : 'N/A'}
+            </td>
+        </tr>`;
+    }
+    formatBuildPipelinesForConfluence(pipelineData, sprintName) {
+        if (!pipelineData || pipelineData.length === 0) {
+            return `
+<h2>🔨 Build Pipelines</h2>
+<p><em>No build pipeline data available for this release.</em></p>`;
+        }
+        // Get latest build for each pipeline
+        const latestBuilds = pipelineData.map(pipeline => {
+            const latestBuild = pipeline.builds.length > 0 ? pipeline.builds[0] : null;
+            return {
+                pipelineName: pipeline.name,
+                build: latestBuild
+            };
+        }).filter(item => item.build !== null);
+        // If we have pipelines but no builds, show a different message
+        if (latestBuilds.length === 0) {
+            return `
+<h2>🔨 Build Pipelines</h2>
+<p><em>Found ${pipelineData.length} pipeline(s) but no recent builds matching the sprint criteria.</em></p>
+<p><strong>Monitored Pipelines:</strong></p>
+<ul>
+${pipelineData.map(p => `  <li>${p.name}</li>`).join('')}
+</ul>`;
+        }
+        const successfulBuilds = latestBuilds.filter(item => item.build.result === 'succeeded').length;
+        const failedBuilds = latestBuilds.filter(item => item.build.result === 'failed').length;
+        const inProgressBuilds = latestBuilds.filter(item => item.build.status === 'inProgress').length;
+        const totalPipelines = pipelineData.length;
+        let content = `
+<h2>🔨 Build Pipelines</h2>
+<p><em>Latest deployment pipeline status for ${sprintName || 'this sprint'}</em></p>
+
+<h3>📊 Pipeline Status Summary</h3>
+<table>
+  <tr>
+    <th style="width: 50%; text-align: left;">🏗️ Status</th>
+    <th style="width: 25%; text-align: center;">📈 Count</th>
+    <th style="width: 25%; text-align: center;">📊 Percentage</th>
+  </tr>
+  <tr>
+    <td>✅ <strong>Successful</strong></td>
+    <td style="text-align: center; font-weight: bold; color: #00875A;">${successfulBuilds}</td>
+    <td style="text-align: center;">${totalPipelines > 0 ? Math.round((successfulBuilds / totalPipelines) * 100) : 0}%</td>
+  </tr>
+  <tr>
+    <td>❌ <strong>Failed</strong></td>
+    <td style="text-align: center; font-weight: bold; color: #DE350B;">${failedBuilds}</td>
+    <td style="text-align: center;">${totalPipelines > 0 ? Math.round((failedBuilds / totalPipelines) * 100) : 0}%</td>
+  </tr>
+  <tr>
+    <td>🔄 <strong>In Progress</strong></td>
+    <td style="text-align: center; font-weight: bold; color: #FF8B00;">${inProgressBuilds}</td>
+    <td style="text-align: center;">${totalPipelines > 0 ? Math.round((inProgressBuilds / totalPipelines) * 100) : 0}%</td>
+  </tr>
+  <tr>
+    <td>🔧 <strong>Total Pipelines</strong></td>
+    <td style="text-align: center; font-weight: bold; color: #6554C0;">${totalPipelines}</td>
+    <td style="text-align: center;">100%</td>
+  </tr>
+</table>
+
+<h3>🕐 Latest Builds Details</h3>
+<table>
+  <tr>
+    <th style="width: 25%; text-align: left;">🏗️ Pipeline</th>
+    <th style="width: 12%; text-align: center;">🔢 Build #</th>
+    <th style="width: 15%; text-align: center;">📅 Date</th>
+    <th style="width: 23%; text-align: left;">🌿 Branch</th>
+    <th style="width: 15%; text-align: center;">🚦 Status</th>
+    <th style="width: 10%; text-align: center;">🔗 Link</th>
+  </tr>`;
+        for (const item of latestBuilds) {
+            const build = item.build;
+            const statusIcon = this.getBuildStatusIconForConfluence(build.result || build.status);
+            const date = new Date(build.queueTime).toLocaleDateString();
+            const branchName = build.sourceBranch ? build.sourceBranch.replace('refs/heads/', '') : 'Unknown';
+            content += `
+  <tr>
+    <td><strong>${item.pipelineName}</strong></td>
+    <td style="text-align: center;"><strong>#${build.buildNumber}</strong></td>
+    <td style="text-align: center;">📅 ${date}</td>
+    <td>🌿 ${branchName}</td>
+    <td style="text-align: center;">${statusIcon} <strong>${build.result || build.status}</strong></td>
+    <td style="text-align: center;">${build.webUrl ? `<a href="${build.webUrl}">🔗 View</a>` : 'N/A'}</td>
+  </tr>`;
+        }
+        content += `</table>`;
+        return content;
+    }
+    getBuildStatusIcon(status) {
+        const statusIcons = {
+            'succeeded': '<i class="fas fa-check-circle" style="color: #00875A;"></i>',
+            'failed': '<i class="fas fa-times-circle" style="color: #DE350B;"></i>',
+            'partiallySucceeded': '<i class="fas fa-exclamation-triangle" style="color: #FF8B00;"></i>',
+            'canceled': '<i class="fas fa-ban" style="color: #6B778C;"></i>',
+            'inProgress': '<i class="fas fa-spinner fa-spin" style="color: #0052CC;"></i>',
+            'notStarted': '<i class="fas fa-clock" style="color: #6B778C;"></i>'
+        };
+        return statusIcons[status] || '<i class="fas fa-question-circle" style="color: #6B778C;"></i>';
+    }
+    getBuildStatusIconForConfluence(status) {
+        const statusIcons = {
+            'succeeded': '✅',
+            'failed': '❌',
+            'partiallySucceeded': '⚠️',
+            'canceled': '🚫',
+            'inProgress': '🔄',
+            'notStarted': '⏳'
+        };
+        return statusIcons[status] || '❓';
+    }
+    getBuildStatusClass(status) {
+        const statusClasses = {
+            'succeeded': 'status-success',
+            'failed': 'status-failed',
+            'partiallySucceeded': 'status-warning',
+            'canceled': 'status-canceled',
+            'inProgress': 'status-progress',
+            'notStarted': 'status-pending'
+        };
+        return statusClasses[status] || 'status-unknown';
     }
 }

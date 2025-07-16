@@ -6,8 +6,8 @@ export class GitHubService {
     repository;
     token;
     constructor() {
-        this.repository = process.env.GITHUB_REPOSITORY;
-        this.token = process.env.GITHUB_TOKEN;
+        this.repository = process.env.GH_REPOSITORY;
+        this.token = process.env.GH_TOKEN;
         if (!this.repository || !this.token) {
             throw new Error("Missing required GitHub environment variables");
         }

@@ -2,6 +2,7 @@ import { JiraService } from "./JiraService.js";
 import { GitHubService } from "./GitHubService.js";
 import { ConfluenceService } from "./ConfluenceService.js";
 import { TeamsService } from "./TeamsService.js";
+import { AzureDevOpsService } from "./AzureDevOpsService.js";
 import { HtmlFormatter } from "../utils/HtmlFormatter.js";
 import { MarkdownFormatter } from "../utils/MarkdownFormatter.js";
 import { FileService } from "./FileService.js";
@@ -45,6 +46,7 @@ export class ReleaseNotesService {
   private githubService: GitHubService;
   private confluenceService: ConfluenceService;
   private teamsService: TeamsService;
+  private azureDevOpsService: AzureDevOpsService;
   private fileService: FileService;
 
   constructor() {
@@ -52,6 +54,7 @@ export class ReleaseNotesService {
     this.githubService = new GitHubService();
     this.confluenceService = new ConfluenceService();
     this.teamsService = new TeamsService();
+    this.azureDevOpsService = new AzureDevOpsService();
     this.fileService = new FileService();
   }
 
@@ -62,6 +65,7 @@ export class ReleaseNotesService {
 
     let jiraIssues: any[] = [];
     let commits: any[] = [];
+    let buildPipelineData: any[] = [];
     let sprintName = sprintNumber; // Default to sprint number
 
     if (sprintNumber) {
@@ -91,6 +95,11 @@ export class ReleaseNotesService {
       console.log('📊 Fetching JIRA issues...');
       jiraIssues = await this.jiraService.fetchIssues(sprintNumber);
       console.log(`✅ Found ${jiraIssues.length} JIRA issues`);
+
+      // Fetch build pipeline data for the sprint
+      console.log('🔨 Fetching build pipeline data...');
+      buildPipelineData = await this.azureDevOpsService.fetchPipelineData(sprintNumber);
+      console.log(`✅ Found build data for ${buildPipelineData.length} pipelines`);
     } else {
       // No sprint specified, use fallback approach
       console.log('🔗 Fetching GitHub commits (last 8 days)...');
@@ -102,7 +111,7 @@ export class ReleaseNotesService {
     if (format === "html") {
       console.log('🎨 Generating HTML content with modern theme...');
       const htmlFormatter = new HtmlFormatter(theme);
-      content = htmlFormatter.format(jiraIssues, commits, sprintName);
+      content = htmlFormatter.format(jiraIssues, commits, sprintName, buildPipelineData);
     } else {
       console.log('📝 Generating Markdown content...');
       const markdownFormatter = new MarkdownFormatter();
@@ -136,6 +145,7 @@ export class ReleaseNotesService {
     
     let jiraIssues: any[] = [];
     let commits: any[] = [];
+    let buildPipelineData: any[] = [];
     let sprintDetails: any = null;
 
     if (sprintNumber) {
@@ -164,6 +174,11 @@ export class ReleaseNotesService {
       console.log("📊 Fetching JIRA issues...");
       jiraIssues = await this.jiraService.fetchIssues(sprintNumber);
       console.log(`✅ Found ${jiraIssues.length} JIRA issues`);
+
+      // Fetch build pipeline data for the sprint
+      console.log('🔨 Fetching build pipeline data...');
+      buildPipelineData = await this.azureDevOpsService.fetchPipelineData(sprintNumber);
+      console.log(`✅ Found build data for ${buildPipelineData.length} pipelines`);
     } else {
       // No sprint specified, use fallback approach
       console.log("🔗 Fetching GitHub commits (last 8 days)...");
@@ -190,7 +205,7 @@ export class ReleaseNotesService {
     if (output === "confluence" || output === "both") {
       // Generate Confluence-specific content
       const htmlFormatter = new HtmlFormatter("modern");
-      const confluenceContent = htmlFormatter.formatForConfluence(jiraIssues, commits, sprintNumber);
+      const confluenceContent = htmlFormatter.formatForConfluence(jiraIssues, commits, sprintNumber, buildPipelineData);
       await this.confluenceService.publishPage(confluenceContent, sprintNumber);
       steps.push("Published to Confluence");
     }

@@ -33,6 +33,7 @@ export declare class ReleaseNotesService {
     private githubService;
     private confluenceService;
     private teamsService;
+    private azureDevOpsService;
     private fileService;
     constructor();
     generateReleaseNotes(options: ReleaseNotesOptions): Promise<ReleaseNotesResult>;

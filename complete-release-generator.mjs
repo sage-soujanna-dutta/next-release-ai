@@ -11,6 +11,7 @@ import { ConfluenceService } from './dist/services/ConfluenceService.js';
 import { HtmlFormatter } from './dist/utils/HtmlFormatter.js';
 import { JiraService } from './dist/services/JiraService.js';
 import { GitHubService } from './dist/services/GitHubService.js';
+import { AzureDevOpsService } from './dist/services/AzureDevOpsService.js';
 import dotenv from 'dotenv';
 import fs from 'fs/promises';
 
@@ -47,6 +48,7 @@ async function generateCompleteReleaseNotes(sprintNumber = 'SCNT-2025-20') {
         // Fetch data for Confluence formatting
         const jiraService = new JiraService();
         const githubService = new GitHubService();
+        const azureDevOpsService = new AzureDevOpsService();
         
         console.log('   📊 Fetching JIRA issues...');
         const jiraIssues = await jiraService.fetchIssues(sprintNumber);
@@ -54,9 +56,12 @@ async function generateCompleteReleaseNotes(sprintNumber = 'SCNT-2025-20') {
         console.log('   💻 Fetching GitHub commits...');
         const commits = await githubService.fetchCommits();
         
+        console.log('   🔨 Fetching build pipeline data...');
+        const buildPipelineData = await azureDevOpsService.fetchPipelineData(sprintNumber);
+        
         console.log('   🎨 Generating enhanced Confluence format...');
         const htmlFormatter = new HtmlFormatter('modern');
-        const confluenceContent = htmlFormatter.formatForConfluence(jiraIssues, commits, sprintNumber);
+        const confluenceContent = htmlFormatter.formatForConfluence(jiraIssues, commits, sprintNumber, buildPipelineData);
         
         console.log('   📤 Publishing to Confluence...');
         const confluenceService = new ConfluenceService();
