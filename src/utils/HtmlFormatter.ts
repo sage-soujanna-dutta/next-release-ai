@@ -386,20 +386,31 @@ ${buildPipelineContent}
 <p><em>No JIRA issues found for this release.</em></p>`;
     }
 
-    const issuesByType = issues.reduce((acc, issue) => {
-      const type = issue.fields.issuetype.name;
-      if (!acc[type]) {
-        acc[type] = [];
-      }
-      acc[type].push(issue);
-      return acc;
-    }, {} as Record<string, JiraIssue[]>);
+    // Group by component first, then by type
+    const groupedByComponent = this.groupIssuesByComponent(issues);
 
     let content = `<h2>📋 JIRA Issues (${issues.length} total)</h2>`;
+    content += `<p><em>Issues organized by component and type for better visibility</em></p>`;
 
-    for (const [type, typeIssues] of Object.entries(issuesByType)) {
+    // Process each component
+    for (const [component, componentIssues] of Object.entries(groupedByComponent)) {
       content += `
-<h3>${this.getIssueTypeIconForConfluence(type)} ${type} Issues (${typeIssues.length})</h3>
+<h3>🏗️ ${component} Component (${componentIssues.length} issues)</h3>`;
+
+      // Group by issue type within the component
+      const issuesByType = componentIssues.reduce((acc, issue) => {
+        const type = issue.fields.issuetype.name;
+        if (!acc[type]) {
+          acc[type] = [];
+        }
+        acc[type].push(issue);
+        return acc;
+      }, {} as Record<string, JiraIssue[]>);
+
+      // Create a table for each issue type within the component
+      for (const [type, typeIssues] of Object.entries(issuesByType)) {
+        content += `
+<h4>${this.getIssueTypeIconForConfluence(type)} ${type} Issues (${typeIssues.length})</h4>
 
 <table>
   <tr>
@@ -410,15 +421,15 @@ ${buildPipelineContent}
     <th style="width: 15%; text-align: center;">⚡ Priority</th>
   </tr>`;
 
-      for (const issue of typeIssues) {
-        const status = issue.fields.status.name;
-        const priority = issue.fields.priority?.name || 'Not Set';
-        const assignee = issue.fields.assignee?.displayName || 'Unassigned';
-        const statusIcon = this.getStatusIconForConfluence(status);
-        const priorityIcon = this.getPriorityIconForConfluence(priority);
-        const issueUrl = `https://${process.env.JIRA_DOMAIN}/browse/${issue.key}`;
-        
-        content += `
+        for (const issue of typeIssues) {
+          const status = issue.fields.status.name;
+          const priority = issue.fields.priority?.name || 'Not Set';
+          const assignee = issue.fields.assignee?.displayName || 'Unassigned';
+          const statusIcon = this.getStatusIconForConfluence(status);
+          const priorityIcon = this.getPriorityIconForConfluence(priority);
+          const issueUrl = `https://${process.env.JIRA_DOMAIN}/browse/${issue.key}`;
+          
+          content += `
   <tr>
     <td><strong><a href="${issueUrl}">${issue.key}</a></strong></td>
     <td>${issue.fields.summary}</td>
@@ -426,9 +437,12 @@ ${buildPipelineContent}
     <td style="text-align: center;">👤 ${assignee}</td>
     <td style="text-align: center;">${priorityIcon} <strong>${priority}</strong></td>
   </tr>`;
+        }
+
+        content += `</table><br/>`;
       }
 
-      content += `</table><br/>`;
+      content += `<hr/>`; // Separator between components
     }
 
     return content;
