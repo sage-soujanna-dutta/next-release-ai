@@ -9,7 +9,8 @@ export declare class GitHubService {
     private repository;
     private token;
     constructor();
-    fetchCommits(date?: string): Promise<GitHubCommit[]>;
+    fetchCommits(date?: string, branch?: string): Promise<GitHubCommit[]>;
+    fetchAllCommitsFromBranch(branch: string, maxCommits?: number): Promise<GitHubCommit[]>;
     fetchCommitsForDateRange(startDate: string, endDate: string): Promise<GitHubCommit[]>;
     fetchPullRequests(date?: string): Promise<any>;
     getRepositoryStats(): Promise<{
