@@ -1,106 +1,330 @@
-# Release Notes MCP Server
+# 🚀 Release Notes MCP Server
 
-An advanced Model Context Protocol (MCP) server for automated release notes generation with VS Code Copilot integration. This tool combines JIRA issues and GitHub commits to create beautiful, comprehensive release notes with support for Confluence publishing and Teams notifications.
+> **An enterprise-grade Model Context Protocol (MCP) server for automated release notes generation with VS Code Copilot integration.**
 
-## 🚀 Features
+Transform your release process with AI-powered automation that combines JIRA issues, GitHub commits, and team insights into beautiful, comprehensive release notes. Features advanced JIRA analytics, velocity tracking, and seamless integration with Confluence and Microsoft Teams.
 
-- **MCP Server Integration**: Full VS Code Copilot integration via Model Context Protocol
-- **Multi-format Output**: Generate HTML and Markdown release notes
-- **Beautiful Themes**: Modern, minimal, and default themes for HTML output
-- **JIRA Integration**: Fetch and categorize issues by type and status
-- **GitHub Integration**: Automatically include commits since last release
-- **Confluence Publishing**: Direct publishing to Confluence pages
-- **Teams Notifications**: Automated notifications via Microsoft Teams webhooks
-- **GitHub Actions**: Complete CI/CD automation workflow
-- **CLI Interface**: Standalone command-line interface
-- **File Export**: Save release notes as HTML/Markdown files
+## ✨ **What Makes This Special**
 
-## 📦 Installation
+- 🤖 **AI-Powered**: Natural language commands through VS Code Copilot
+- 📊 **Advanced Analytics**: Deep JIRA insights, risk assessment, and velocity tracking  
+- 🎨 **Beautiful Output**: Professional HTML themes and clean Markdown
+- 🔄 **Full Automation**: From data collection to publishing and notifications
+- 🚀 **Enterprise Ready**: Handles complex workflows with error handling and validation
 
+## 🎯 **Quick Start (2 Minutes)**
+
+### Prerequisites
+- VS Code with GitHub Copilot extension
+- Node.js 18+ 
+- Access to JIRA, GitHub, and optionally Confluence/Teams
+
+### 1. Setup
 ```bash
+git clone <your-repo>
+cd next-release-ai
 npm install
-npm run build
+cp .env.example .env  # Configure your API tokens
 ```
 
-## 🔧 Configuration
+### 2. Start the MCP Server
+```bash
+npm run mcp-server
+```
 
-1. Copy the environment template:
+### 3. Use with VS Code Copilot
+Open VS Code and use natural language commands:
+- *"Generate release notes for sprint SCNT-2025-20"*
+- *"Analyze story points across the last 3 sprints"*  
+- *"Create a velocity report and send to Teams"*
+- *"Assess risks for tickets in my current sprint"*
+
+## 🛠️ **Core Capabilities**
+
+### 🎯 **Release Generation**
+| Tool | Purpose | Key Features |
+|------|---------|--------------|
+| `generate_release_notes` | Complete release notes | Sprint-aware, Multi-format output, Auto-publishing |
+| `preview_release_notes` | Preview before publishing | Safe testing, Format validation |
+| `create_release_workflow` | End-to-end automation | File + Confluence + Teams |
+
+### 📊 **Sprint Analytics**  
+| Tool | Purpose | Key Features |
+|------|---------|--------------|
+| `analyze_story_points` | Story point analysis | Multi-sprint comparison, Completion tracking |
+| `generate_velocity_report` | Team velocity trends | 6-month analysis, Performance insights |
+| `sprint_summary_report` | Comprehensive sprint overview | Team metrics, Issue breakdown |
+
+### 🔍 **JIRA Deep Analytics**
+| Tool | Purpose | Key Features |
+|------|---------|--------------|
+| `analyze_jira_ticket` | Individual ticket insights | Risk assessment, Quality scoring |
+| `bulk_analyze_tickets` | Multi-ticket analysis | Batch processing, Advanced filtering |
+| `generate_jira_report` | Custom reporting | Grouping, Metrics, Export options |
+| `ticket_risk_assessment` | Risk evaluation | Predictive analysis, Mitigation strategies |
+| `ticket_collaboration_analysis` | Team collaboration insights | Stakeholder engagement, Activity patterns |
+
+### ⚙️ **Utilities**
+| Tool | Purpose | Key Features |
+|------|---------|--------------|
+| `validate_configuration` | Environment validation | API connectivity, Missing variables |
+| `fetch_jira_issues` | Raw data access | Direct JIRA queries |
+| `fetch_github_commits` | Raw commit data | Date-based filtering |
+
+## 📚 **Documentation Guide**
+
+| Document | Purpose | When to Use |
+|----------|---------|-------------|
+| 📖 **[Quick Start Guide](#quick-start-2-minutes)** | Get running fast | First time setup |
+| 🛠️ **[MCP Commands Guide](./MCP_COMMANDS.md)** | Complete command reference | Learning all capabilities |
+| 🔧 **[JIRA Tools Guide](./ENHANCED_JIRA_TOOLS.md)** | Advanced JIRA features | Complex analysis needs |
+| 🤖 **[Automation Guide](./AUTOMATION_GUIDE.md)** | GitHub Actions setup | CI/CD integration |
+| 💬 **[Teams Integration](./TEAMS_VALIDATION_REPORT.md)** | Teams notifications | Team collaboration |
+| 🚀 **[Project Showcase](./project-showcase.md)** | Full feature demo | Understanding capabilities |
+
+## 🏗️ **Architecture Overview**
+
+```
+📦 Release MCP Server
+├── 🧠 MCP Server Core (src/index.ts)
+│   ├── 🔧 13 AI-Accessible Tools
+│   └── 🎯 VS Code Copilot Integration
+├── 🏢 Services Layer
+│   ├── 📋 JIRA Service (Enhanced Analytics)
+│   ├── 🐙 GitHub Service (Commit Analysis)  
+│   ├── 📝 Confluence Service (Publishing)
+│   ├── 💬 Teams Service (Notifications)
+│   └── 📁 File Service (Export Management)
+├── 🎨 Formatters
+│   ├── 🌐 HTML Formatter (3 Themes)
+│   └── 📄 Markdown Formatter  
+└── 🔍 Advanced Analytics
+    ├── 📊 JIRA Extractor (Deep Data Mining)
+    └── 🎯 JIRA Analyzer (Insights Engine)
+```
+- **`sprint_summary_report`**: Comprehensive sprint summaries with team metrics
+
+### Release Management Tools
+- **`generate_release_notes`**: Generate formatted release notes from JIRA and GitHub
+- **`confluence_release_notes`**: Generate and publish release notes to Confluence
+- **`complete_release_process`**: End-to-end release notes generation and distribution
+
+See [ENHANCED_JIRA_TOOLS.md](./ENHANCED_JIRA_TOOLS.md) for detailed JIRA tools documentation and [MCP_COMMANDS.md](./MCP_COMMANDS.md) for complete tool reference.
+
+## ⚙️ **Complete Configuration Guide**
+
+### � **Environment Variables Reference**
+
+Create a `.env` file from the template:
 ```bash
 cp .env.example .env
 ```
 
-2. Configure your environment variables in `.env`:
-
+#### **Core Services (Required)**
 ```bash
-# Required Environment Variables
-JIRA_DOMAIN=your-domain.atlassian.net
-JIRA_TOKEN=your_jira_api_token
-JIRA_BOARD_ID=123
-JIRA_SPRINT_NUMBER=Sprint-42
+# JIRA Configuration
+JIRA_DOMAIN=your-company.atlassian.net          # Your JIRA domain
+JIRA_EMAIL=your.email@company.com               # Your JIRA email
+JIRA_TOKEN=ATATT3xFfGF0...                      # JIRA API Token
+JIRA_BOARD_ID=6306                              # Board ID from JIRA URL
 
-# GitHub Configuration
-GH_REPOSITORY=owner/repository-name
-GH_TOKEN=ghp_your_github_token
+# GitHub Configuration  
+GH_REPOSITORY=owner/repository-name             # GitHub repo (owner/name)
+GH_TOKEN=ghp_abcd1234...                        # GitHub Personal Access Token
 
-# Confluence Configuration
-CONFLUENCE_USERNAME=your-email@company.com
-CONFLUENCE_PAT=your_confluence_personal_access_token
-CONFLUENCE_SPACE=SPACE_KEY
-JIRA_CONFLUENCE_DOMAIN=your-domain.atlassian.net
+# Confluence Publishing (Optional)
+CONFLUENCE_USERNAME=your.email@company.com      # Confluence email
+CONFLUENCE_PAT=ATATT3xFfGF0...                  # Confluence API Token (same as JIRA)
+CONFLUENCE_SPACE=SPACE                          # Confluence Space Key
+JIRA_CONFLUENCE_DOMAIN=your-company.atlassian.net # Usually same as JIRA
 
-# Optional Configuration
-TEAMS_WEBHOOK_URL=https://outlook.office.com/webhook/your-webhook-url
-JIRA_FETCH_COMMITS_DATE=2024-01-01T00:00:00Z
-OUTPUT_DIR=./output
+# Teams Notifications (Optional)
+TEAMS_WEBHOOK_URL=https://outlook.office.com/webhook/... # Teams webhook URL
 ```
 
-### 🔑 Getting API Tokens
-
-#### JIRA API Token
-1. Go to [Atlassian Account Settings](https://id.atlassian.com/manage-profile/security/api-tokens)
-2. Click "Create API token"
-3. Give it a label and copy the token
-
-#### GitHub Token
-1. Go to [GitHub Personal Access Tokens](https://github.com/settings/tokens)
-2. Click "Generate new token (classic)"
-3. Select scopes: `repo`, `read:org`
-
-#### Confluence PAT
-1. Go to [Atlassian Account Settings](https://id.atlassian.com/manage-profile/security/api-tokens)
-2. Use the same token as JIRA (they're unified)
-
-## 🔌 VS Code Copilot Integration
-
-### MCP Server Setup
-
-1. Build the project:
+#### **Advanced Configuration (Optional)**
 ```bash
+# Output Customization
+OUTPUT_DIR=./output                             # Output directory for files
+DEFAULT_SPRINT_NUMBER=SCNT-2025-20             # Default sprint if not specified
+
+# Date Filtering
+JIRA_FETCH_COMMITS_DATE=2024-01-01T00:00:00Z   # Default commit start date
+
+# Azure DevOps (If using build pipelines)
+AZURE_ORG_URL=https://dev.azure.com/YourOrg
+AZURE_PROJECT=ProjectName
+AZURE_PAT=your_azure_token
+```
+
+### 🔑 **API Token Setup Guide**
+
+<details>
+<summary><strong>📋 JIRA API Token</strong></summary>
+
+1. **Navigate to Atlassian Account**
+   - Go to [id.atlassian.com/manage-profile/security/api-tokens](https://id.atlassian.com/manage-profile/security/api-tokens)
+   
+2. **Create Token**
+   - Click "Create API token"
+   - Label: "Release Notes MCP Server"
+   - Copy the generated token
+   
+3. **Test Token**
+   ```bash
+   curl -H "Authorization: Basic $(echo -n 'your.email@company.com:YOUR_TOKEN' | base64)" \
+        "https://your-company.atlassian.net/rest/api/3/myself"
+   ```
+
+</details>
+
+<details>
+<summary><strong>🐙 GitHub Personal Access Token</strong></summary>
+
+1. **Navigate to GitHub Settings**
+   - Go to [github.com/settings/tokens](https://github.com/settings/tokens)
+   
+2. **Generate New Token (Classic)**
+   - Click "Generate new token (classic)"
+   - Scopes needed: `repo`, `read:org`
+   - Copy the generated token
+   
+3. **Test Token**
+   ```bash
+   curl -H "Authorization: token YOUR_TOKEN" \
+        "https://api.github.com/repos/owner/repo/commits"
+   ```
+
+</details>
+
+<details>
+<summary><strong>💬 Teams Webhook URL</strong></summary>
+
+1. **In Microsoft Teams**
+   - Go to your target channel
+   - Click "..." → "Connectors" → "Incoming Webhook"
+   - Configure and copy the webhook URL
+   
+2. **Test Webhook**
+   ```bash
+   curl -X POST -H "Content-Type: application/json" \
+        -d '{"text":"Test from Release MCP Server"}' \
+        "YOUR_WEBHOOK_URL"
+   ```
+
+</details>
+
+### 🚀 **Installation & Setup**
+
+```bash
+# 1. Clone and Install
+git clone <your-repository>
+cd next-release-ai
+npm install
+
+# 2. Configure Environment
+cp .env.example .env
+# Edit .env with your tokens
+
+# 3. Build Project
 npm run build
+
+# 4. Validate Configuration
+npm run mcp-server
+# In VS Code Copilot: "validate configuration"
+
+# 5. Test Basic Functionality
+# In VS Code Copilot: "generate release notes for sprint SCNT-2025-20"
 ```
 
-2. Add to your VS Code settings or MCP configuration:
-```json
-{
-  "mcpServers": {
-    "release-notes": {
-      "command": "node",
-      "args": ["dist/index.js"],
-      "cwd": "/path/to/your/release-mcp-server"
-    }
-  }
-}
+## 🔧 **Troubleshooting Guide**
+
+### **Common Issues & Solutions**
+
+#### ❌ **"Missing required environment variables"**
+```bash
+# Check which variables are missing
+npm run mcp-server
+# In VS Code Copilot: "validate configuration"
+
+# Common fixes:
+# 1. Ensure .env file exists and has all required variables
+# 2. Check for typos in variable names
+# 3. Restart VS Code after changing .env
 ```
 
-### Available MCP Commands
+#### ❌ **"JIRA authentication failed"**
+```bash
+# Test your JIRA connection
+curl -H "Authorization: Basic $(echo -n 'EMAIL:TOKEN' | base64)" \
+     "https://YOUR_DOMAIN.atlassian.net/rest/api/3/myself"
 
-Once integrated with VS Code Copilot, you can use these commands:
+# Common fixes:
+# 1. Verify JIRA_EMAIL matches your Atlassian account email
+# 2. Regenerate JIRA_TOKEN if it's expired
+# 3. Check JIRA_DOMAIN format (don't include https://)
+```
 
-#### 🎯 Core Commands
+#### ❌ **"GitHub API rate limit exceeded"**
+```bash
+# Check your GitHub token permissions
+curl -H "Authorization: token YOUR_TOKEN" \
+     "https://api.github.com/rate_limit"
 
-**`generate_release_notes`**
-- Generate comprehensive release notes
-- Options: `sprintNumber`, `date`, `format` (html/markdown), `theme` (modern/minimal/default)
+# Common fixes:
+# 1. Use GitHub Personal Access Token (not OAuth app token)
+# 2. Ensure token has 'repo' scope
+# 3. Wait for rate limit reset or use different token
+```
+
+#### ❌ **"Sprint not found" errors**
+```bash
+# Verify sprint number format
+# In VS Code Copilot: "get sprint status for SCNT-2025-20"
+
+# Common fixes:
+# 1. Check exact sprint name in JIRA (case-sensitive)
+# 2. Verify JIRA_BOARD_ID is correct
+# 3. Ensure sprint exists and is accessible to your user
+```
+
+#### ❌ **"No commits found" warnings**
+```bash
+# This is often normal if:
+# 1. Sprint dates don't align with commit dates
+# 2. Repository has no commits in the date range
+# 3. GitHub token doesn't have access to the repository
+
+# To debug:
+# 1. Check repository permissions
+# 2. Verify GH_REPOSITORY format (owner/repo)
+# 3. Test with a specific date range
+```
+
+### **Debug Mode**
+
+Enable detailed logging by setting environment variable:
+```bash
+DEBUG=release-mcp-server npm run mcp-server
+```
+
+### **Testing Individual Components**
+
+```bash
+# Test JIRA connection
+npm run story-points
+
+# Test GitHub connection  
+npm run velocity
+
+# Test Teams integration
+npm run sprint-summary
+
+# Test complete workflow
+# In VS Code Copilot: "create release workflow for sprint SCNT-2025-20"
+```
+
+## 🎯 **Usage Examples**
 
 **`create_release_workflow`**
 - Complete automated workflow (generate + publish + notify)
@@ -153,87 +377,177 @@ Ask VS Code Copilot:
 
 > "Get the status of sprint 43"
 
-## 💻 CLI Usage
+### **VS Code Copilot Commands (Natural Language)**
 
-### Available Commands
+```plaintext
+# 🎯 Basic Release Generation
+"Generate release notes for sprint SCNT-2025-20"
+"Create HTML release notes with modern theme for sprint SCNT-2025-21"
+"Generate markdown release notes for the current sprint"
+
+# 📊 Sprint Analytics  
+"Analyze story points for the last 3 sprints"
+"Generate a velocity report for our team"
+"Create a comprehensive sprint summary for SCNT-2025-20"
+
+# 🔍 JIRA Deep Analysis
+"Analyze the risk factors for tickets in sprint SCNT-2025-20"
+"Bulk analyze all tickets with JQL: project = SCNT AND sprint = 'SCNT-2025-20'"
+"Check collaboration patterns for tickets assigned to me"
+
+# 🚀 Complete Workflows
+"Create a complete release workflow for sprint SCNT-2025-20 and publish to Confluence"
+"Generate release notes and send notification to Teams"
+"Preview release notes before publishing"
+
+# 🔧 Utilities
+"Validate my configuration"
+"Check the status of sprint SCNT-2025-20"
+"Fetch GitHub commits from the last week"
+```
+
+### **NPM Script Commands**
 
 ```bash
-# Generate release notes
-npm run start generate --sprint "Sprint-42" --format html --theme modern
+# 📊 Analytics Commands
+npm run story-points    # Analyze story points across sprints
+npm run velocity        # Generate velocity trends report  
+npm run sprint-summary  # Create detailed sprint summary
 
-# Run complete workflow
-npm run start workflow --sprint "Sprint-42" --output both --teams
+# 🚀 Core Commands
+npm run mcp-server      # Start MCP server for VS Code
+npm run start           # Start MCP server (alternative)
+npm run build           # Build TypeScript to JavaScript
+npm run release         # Legacy: Use scripts/postToConfluence.ts
 
-# Preview release notes
-npm run start preview --sprint "Sprint-42" --format markdown
-
-# Validate configuration
-npm run start validate
-
-# Start MCP server
-npm run start server
+# 🔧 Development
+npm run dev            # Start server in watch mode
 ```
 
-### Command Options
+### **Advanced Usage Examples**
 
-**Generate Command:**
-- `--sprint, -s`: Sprint number
-- `--date, -d`: Date to fetch commits from (ISO format)
-- `--format, -f`: Output format (html|markdown)
-- `--theme, -t`: HTML theme (default|modern|minimal)
+<details>
+<summary><strong>🎯 Multi-Sprint Release Notes</strong></summary>
 
-**Workflow Command:**
-- `--sprint, -s`: Sprint number
-- `--date, -d`: Date to fetch commits from
-- `--output, -o`: Output destination (confluence|file|both)
-- `--no-teams`: Skip Teams notification
+```javascript
+// In VS Code Copilot
+"Generate combined release notes for sprints SCNT-2025-19 and SCNT-2025-20"
 
-**Preview Command:**
-- `--sprint, -s`: Sprint number
-- `--date, -d`: Date to fetch commits from
-- `--format, -f`: Preview format (html|markdown)
-
-## 🤖 GitHub Actions Automation
-
-The project includes a complete GitHub Actions workflow for automated release notes generation.
-
-### Workflow Features
-
-- **Scheduled Runs**: Automatically runs every Friday at 5 PM UTC
-- **Manual Triggers**: Run on-demand with custom parameters
-- **Configuration Validation**: Verify setup before generation
-- **Artifact Upload**: Save generated files as artifacts
-- **Multiple Outputs**: Support for Confluence, file, or both
-
-### Setup GitHub Secrets
-
-Add these secrets to your GitHub repository:
-
-```
-JIRA_DOMAIN
-JIRA_TOKEN
-JIRA_BOARD_ID
-GH_TOKEN (automatically provided)
-CONFLUENCE_USERNAME
-CONFLUENCE_PAT
-CONFLUENCE_SPACE
-JIRA_CONFLUENCE_DOMAIN
-TEAMS_WEBHOOK_URL (optional)
-DEFAULT_SPRINT_NUMBER (optional)
+// The system will:
+// 1. Fetch issues from both sprints
+// 2. Combine commit history for the date range
+// 3. Create unified release notes
+// 4. Categorize by sprint for clarity
 ```
 
-### Manual Workflow Trigger
+</details>
 
-1. Go to Actions tab in your repository
-2. Select "Automated Release Notes"
-3. Click "Run workflow"
-4. Configure parameters:
-   - Sprint number
-   - Date range
-   - Output destination
-   - Teams notification preference
+<details>
+<summary><strong>📊 Risk Assessment Workflow</strong></summary>
 
-## 🎨 HTML Themes
+```javascript
+// In VS Code Copilot
+"Assess risks for all tickets in our current sprint and send results to Teams"
+
+// The system will:
+// 1. Identify current sprint automatically
+// 2. Analyze each ticket for risk factors
+// 3. Generate mitigation recommendations
+// 4. Send formatted report to Teams channel
+```
+
+</details>
+
+<details>
+<summary><strong>🔍 Custom JQL Analysis</strong></summary>
+
+```javascript
+// In VS Code Copilot
+"Analyze tickets with JQL: project = SCNT AND status = 'In Progress' AND assignee = currentUser()"
+
+// The system will:
+// 1. Execute custom JQL query
+// 2. Perform deep analysis on results
+// 3. Provide insights and recommendations
+// 4. Optionally export detailed report
+```
+
+</details>
+
+## 🤖 **GitHub Actions Automation**
+
+Your project includes enterprise-grade automation. See **[Automation Guide](./AUTOMATION_GUIDE.md)** for complete setup.
+
+### **Quick Setup**
+1. **Add Secrets**: Configure repository secrets for API tokens
+2. **Enable Workflows**: Workflows automatically trigger on schedule
+3. **Manual Triggers**: Use workflow dispatch for on-demand generation
+
+```yaml
+# Sample workflow trigger (runs every Friday at 5 PM UTC)
+on:
+  schedule:
+    - cron: '0 17 * * 5'
+  workflow_dispatch:
+    inputs:
+      sprint_number:
+        description: 'Sprint number'
+        required: true
+```
+
+## 🎨 **Output Themes & Formats**
+### **HTML Themes**
+| Theme | Style | Best For |
+|-------|-------|----------|
+| 🎨 **Modern** | Gradient backgrounds, animations | Executive presentations |
+| 🎯 **Minimal** | Clean, professional | Technical documentation |
+| 📋 **Default** | Classic, readable | General use |
+
+### **Output Formats**
+- **📄 Markdown**: Clean, version-controllable, great for technical teams
+- **🌐 HTML**: Rich formatting, perfect for stakeholder presentations
+- **📝 Confluence**: Direct publishing with proper formatting
+
+## 🔗 **Related Documentation**
+
+| 📚 **Complete Guide** | 🎯 **Purpose** |
+|----------------------|----------------|
+| **[MCP Commands Reference](./MCP_COMMANDS.md)** | Detailed command documentation with examples |
+| **[Enhanced JIRA Tools](./ENHANCED_JIRA_TOOLS.md)** | Advanced JIRA analytics and insights |
+| **[Automation Guide](./AUTOMATION_GUIDE.md)** | GitHub Actions and CI/CD setup |
+| **[Teams Integration](./TEAMS_VALIDATION_REPORT.md)** | Microsoft Teams notifications setup |
+| **[Project Showcase](./project-showcase.md)** | Full feature demonstration |
+
+## 🤝 **Contributing**
+
+1. **Fork the repository**
+2. **Create feature branch**: `git checkout -b feature/amazing-feature`
+3. **Commit changes**: `git commit -m 'Add amazing feature'`
+4. **Push to branch**: `git push origin feature/amazing-feature`
+5. **Open Pull Request**
+
+## 📄 **License**
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🆘 **Support**
+
+- **📖 Documentation**: Check the guides listed above
+- **🐛 Issues**: Create an issue in the GitHub repository
+- **💬 Discussions**: Use GitHub Discussions for questions
+- **🔧 Troubleshooting**: See the troubleshooting section above
+
+## 🎉 **What's Next?**
+
+1. **Try the Quick Start** - Get running in 2 minutes
+2. **Explore Advanced Features** - Check out JIRA analytics tools
+3. **Set Up Automation** - Configure GitHub Actions
+4. **Customize Output** - Try different themes and formats
+5. **Integrate with Teams** - Set up notifications
+
+---
+
+> **💡 Pro Tip**: Use VS Code Copilot's natural language interface - it's designed to understand context and handle complex workflows automatically!
 
 ### Modern Theme (Default)
 - Gradient headers with modern colors

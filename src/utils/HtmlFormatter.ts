@@ -621,10 +621,10 @@ ${buildPipelineContent}
     }, {} as Record<string, GitHubCommit[]>);
 
     const authors = Object.keys(commitsByAuthor);
-    const displayCommits = commits; // Show ALL commits
+    const displayCommits = commits.slice(0, 25); // Limit for better performance
 
     let content = `
-<h2>💻 All Commits (${commits.length} total, ${authors.length} contributors)</h2>
+<h2>💻 Recent Commits (${commits.length} total, ${authors.length} contributors)</h2>
 
 <h3>👥 Contributor Summary</h3>
 <table>
@@ -672,8 +672,10 @@ ${buildPipelineContent}
 
     content += `</table>`;
 
-    // Show all commits now - no need for limitation message
-    
+    if (commits.length > 25) {
+      content += `<p><em>📊 Showing first 25 commits out of ${commits.length} total commits in this sprint.</em></p>`;
+    }
+
     return content;
   }
 

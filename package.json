@@ -4,14 +4,17 @@
   "description": "MCP server for automated release notes generation with JIRA and GitHub integration",
   "type": "module",
   "scripts": {
-    "build": "tsc",
     "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts",
-    "release": "tsx scripts/postToConfluence.ts",
+    "mcp-server": "tsx src/index.ts",
+    "release-workflow": "tsx release-workflow.ts",
+    "sprint-review": "tsx generate-sprint-review.ts",
+    "velocity": "tsx generate-velocity-report.ts",
+    "story-points": "tsx analyze-story-points.ts",
+    "sprint-summary": "tsx sprint-summary-report.ts",
+    "create-shareable-html": "tsx create-shareable-html.ts",
+    "validate-teams": "tsx validate-teams-integration.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "bin": {
-    "release-mcp-server": "./dist/index.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.4.0",
