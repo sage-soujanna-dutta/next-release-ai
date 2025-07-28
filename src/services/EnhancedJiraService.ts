@@ -486,4 +486,95 @@ export class EnhancedJiraService {
       throw new Error(`Failed to search tickets: ${error.message}`);
     }
   }
+
+  /**
+   * Get sprint metrics and data
+   */
+  async getSprintMetrics(sprintNumber: string): Promise<any> {
+    try {
+      // Search for issues in the sprint
+      const jql = `sprint = "${sprintNumber}" OR fixVersion = "${sprintNumber}"`;
+      const searchResult = await this.searchTickets(jql, {
+        fields: [
+          'key', 'summary', 'status', 'assignee', 'priority', 'issuetype',
+          'customfield_10004', 'customfield_10002', 'customfield_10003', 'customfield_10005',
+          'created', 'updated', 'resolved'
+        ],
+        maxResults: 1000
+      });
+
+      const issues = searchResult.issues || [];
+      
+      // Calculate metrics
+      const totalIssues = issues.length;
+      const completedIssues = issues.filter((issue: any) => 
+        ['Done', 'Closed', 'Resolved'].includes(issue.fields.status?.name)
+      ).length;
+      
+      const completionRate = totalIssues > 0 ? (completedIssues / totalIssues) * 100 : 0;
+      
+      // Calculate story points
+      let totalStoryPoints = 0;
+      let completedStoryPoints = 0;
+      
+      issues.forEach((issue: any) => {
+        const storyPoints = 
+          issue.fields.customfield_10004 || 
+          issue.fields.customfield_10002 || 
+          issue.fields.customfield_10003 || 
+          issue.fields.customfield_10005 || 
+          0;
+        
+        totalStoryPoints += storyPoints;
+        
+        if (['Done', 'Closed', 'Resolved'].includes(issue.fields.status?.name)) {
+          completedStoryPoints += storyPoints;
+        }
+      });
+
+      // Group by status, assignee, priority
+      const byStatus = this.groupBy(issues, (issue: any) => issue.fields.status?.name || 'Unknown');
+      const byAssignee = this.groupBy(issues, (issue: any) => issue.fields.assignee?.displayName || 'Unassigned');
+      const byPriority = this.groupBy(issues, (issue: any) => issue.fields.priority?.name || 'No Priority');
+      const byType = this.groupBy(issues, (issue: any) => issue.fields.issuetype?.name || 'Unknown');
+
+      return {
+        sprintId: sprintNumber,
+        period: `Sprint ${sprintNumber}`,
+        totalIssues,
+        completedIssues,
+        completionRate: Math.round(completionRate * 100) / 100,
+        totalStoryPoints,
+        completedStoryPoints,
+        storyPointsCompletion: totalStoryPoints > 0 ? Math.round((completedStoryPoints / totalStoryPoints) * 100) : 0,
+        issues,
+        breakdown: {
+          byStatus,
+          byAssignee,
+          byPriority,
+          byType
+        },
+        contributors: Object.keys(byAssignee).map(assignee => ({
+          name: assignee,
+          issuesCount: byAssignee[assignee].length,
+          completedCount: byAssignee[assignee].filter((issue: any) => 
+            ['Done', 'Closed', 'Resolved'].includes(issue.fields.status?.name)
+          ).length
+        }))
+      };
+    } catch (error: any) {
+      throw new Error(`Failed to get sprint metrics: ${error.message}`);
+    }
+  }
+
+  private groupBy<T>(array: T[], keyFn: (item: T) => string): Record<string, T[]> {
+    return array.reduce((groups, item) => {
+      const key = keyFn(item);
+      if (!groups[key]) {
+        groups[key] = [];
+      }
+      groups[key].push(item);
+      return groups;
+    }, {} as Record<string, T[]>);
+  }
 }

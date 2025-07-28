@@ -19,10 +19,6 @@
   "include": ["src/**/*"],
   "exclude": [
     "node_modules", 
-    "dist", 
-    "scripts/**/*",
-    "analyze-story-points.ts",
-    "generate-velocity-report.ts", 
-    "sprint-summary-report.ts"
+    "dist"
   ]
 }

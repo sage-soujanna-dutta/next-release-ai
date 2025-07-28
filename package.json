@@ -7,27 +7,21 @@
     "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts",
     "mcp-server": "tsx src/index.ts",
-    "release-workflow": "tsx release-workflow.ts",
-    "sprint-review": "tsx generate-sprint-review.ts",
-    "velocity": "tsx generate-velocity-report.ts",
-    "story-points": "tsx analyze-story-points.ts",
-    "sprint-summary": "tsx sprint-summary-report.ts",
-    "create-shareable-html": "tsx create-shareable-html.ts",
-    "validate-teams": "tsx validate-teams-integration.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^0.4.0",
     "axios": "^1.6.0",
+    "commander": "^11.0.0",
     "dayjs": "^1.11.7",
     "dotenv": "^16.6.1",
-    "marked": "^9.0.0",
     "jsdom": "^23.0.0",
-    "commander": "^11.0.0"
+    "marked": "^9.0.0",
+    "puppeteer": "^24.15.0"
   },
   "devDependencies": {
-    "@types/node": "^24.0.13",
     "@types/jsdom": "^21.1.0",
+    "@types/node": "^24.0.13",
     "tsx": "^4.6.2",
     "typescript": "^5.1.3"
   },

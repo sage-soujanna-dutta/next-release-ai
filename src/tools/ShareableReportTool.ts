@@ -237,10 +237,10 @@ Microsoft Teams webhooks don't support direct file attachments. Here are the rec
 *Full data URL available in response*`;
     }
 
-    await this.teamsService.sendNotification(
-      "📎 HTML Report - File Attachment Alternative",
-      content
-    );
+    await this.teamsService.sendNotification({
+      title: "📎 HTML Report - File Attachment Alternative",
+      message: content
+    });
 
     // Also send a quick access card
     await this.teamsService.sendRichNotification({
