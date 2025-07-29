@@ -61,8 +61,9 @@ export class EnhancedJiraService {
 
   constructor(config: JiraApiConfig) {
     this.config = config;
-    this.baseUrl = `https://${config.domain}/rest/api/3`;
-    this.authHeader = `Basic ${Buffer.from(`${config.email || config.token}:${config.token}`).toString('base64')}`;
+    this.baseUrl = `https://${config.domain}/rest/api/2`; // Use API v2 for better compatibility
+    // Use Bearer token authentication instead of Basic auth
+    this.authHeader = `Bearer ${config.token}`;
   }
 
   /**

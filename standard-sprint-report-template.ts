@@ -32,8 +32,8 @@ dotenv.config();
 const SPRINT_CONFIG = {
   sprintId: 'SCNT-2025-22',
   sprintNumber: '2025-22',
-  previousSprintVelocity: 102,
-  previousSprintCompletion: 88
+  previousSprintVelocity: 225,
+  previousSprintCompletion: 92
 };
 
 // ===================================================================
@@ -381,14 +381,6 @@ async function generateStandardSprintReport() {
         // Map work breakdown and priorities
         const workBreakdown = mapWorkBreakdown(jiraData.issueTypes, jiraData.totalIssues);
         const priorityData = mapPriorityBreakdown(jiraData.priorities, jiraData.completedIssues, jiraData.totalIssues);
-
-        console.log(`✅ Sprint data prepared: ${sprintData.completionRate}% completion (ACTUAL JIRA DATA)`);
-        console.log(`📊 ${sprintData.storyPoints} story points delivered, ${sprintData.commits} commits`);
-        console.log(`👥 ${sprintData.contributors} contributors, Top: ${contributors[0]?.name || 'N/A'}`);
-        console.log(`📈 Velocity: ${sprintData.velocity || 0} (${(sprintData.velocity || 0) - SPRINT_CONFIG.previousSprintVelocity > 0 ? '+' : ''}${(sprintData.velocity || 0) - SPRINT_CONFIG.previousSprintVelocity} vs previous)`);
-        
-        console.log('\n📋 Step 2: Sending Professional Teams Report');
-        console.log('-'.repeat(55));
         
         // Initialize Professional Teams Template Service
         const templateService = new ProfessionalTeamsTemplateService();
@@ -449,22 +441,6 @@ async function generateStandardSprintReport() {
                 ]
             }
         );
-
-        console.log('\n🎉 Step 3: Report Generation Complete');
-        console.log('-'.repeat(55));
-        console.log(`✅ Professional ${SPRINT_CONFIG.sprintId} report sent to Teams channel`);
-        console.log('📊 Report includes verified JIRA data and executive summary tables');
-        console.log('📈 All metrics sourced from actual JIRA API data');
-        
-        console.log('\n📋 Report Summary:');
-        console.log('=' .repeat(50));
-        console.log(`🎯 Sprint: ${sprintData.sprintId} (${sprintData.period})`);
-        console.log(`📊 Completion: ${sprintData.completionRate}% (${sprintData.completedIssues}/${sprintData.totalIssues} issues)`);
-        console.log(`⚡ Story Points: ${sprintData.storyPoints} delivered`);
-        console.log(`👥 Contributors: ${sprintData.contributors} team members`);
-        console.log(`🚀 Top Performer: ${contributors[0]?.name || 'N/A'} (${contributors[0]?.issuesResolved || 0} issues)`);
-        console.log(`📈 Velocity Trend: ${sprintData.previousSprintComparison?.trend || 'stable'}`);
-        
     } catch (error) {
         console.error(`❌ Error generating ${SPRINT_CONFIG.sprintId} sprint report:`, error);
         if (axios.isAxiosError(error)) {
