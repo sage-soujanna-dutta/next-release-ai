@@ -99,21 +99,37 @@ export interface TeamNotificationData {
 }
 
 export class ProfessionalTeamsTemplateService {
-    private webhookUrl: string;
+    private readonly teamsWebhookUrl: string;
 
     constructor() {
-        this.webhookUrl = process.env.TEAMS_WEBHOOK_URL!;
-
-        if (!this.webhookUrl) {
-            console.warn("TEAMS_WEBHOOK_URL not configured. Teams notifications will be disabled.");
+        this.teamsWebhookUrl = process.env.TEAMS_WEBHOOK_URL || '';
+        if (!this.teamsWebhookUrl) {
+            throw new Error('Teams webhook URL is not configured');
         }
+    }
+
+    /**
+     * Format date in the requested format (e.g., "Jul 11 - Jul 24, 2024")
+     */
+    private formatDateShort(startDate: string, endDate: string): string {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+        
+        const startMonth = start.toLocaleDateString('en-US', { month: 'short' });
+        const startDay = start.getDate();
+        const endMonth = end.toLocaleDateString('en-US', { month: 'short' });
+        const endDay = end.getDate();
+        const endYear = end.getFullYear();
+        
+        // Always show full format: "Jul 11 - Jul 24, 2024"
+        return `${startMonth} ${startDay} - ${endMonth} ${endDay}, ${endYear}`;
     }
 
     /**
      * Send notification using the appropriate template based on type
      */
     public async sendNotification(data: TeamNotificationData): Promise<void> {
-        if (!this.webhookUrl) {
+        if (!this.teamsWebhookUrl) {
             console.log("Teams webhook not configured, skipping notification");
             return;
         }
@@ -159,14 +175,14 @@ export class ProfessionalTeamsTemplateService {
         return {
             "@type": "MessageCard",
             "@context": "https://schema.org/extensions",
-            "summary": `${sprintData.sprintId} - Professional Sprint Report`,
+            "summary": `${data.title || `${sprintData.sprintId} - Sprint Report`}`,
             "themeColor": this.getThemeColor(data.priority),
             "sections": [
                 {
-                    "activityTitle": `🚀 ${sprintData.sprintId} - Professional Sprint Report`,
-                    "activitySubtitle": `${sprintData.period} | ✅ ${sprintData.status} | ${sprintData.completionRate}% Complete`,
+                    "activityTitle": `🚀 ${data.title || `${sprintData.sprintId} - Sprint Report`}`,
+                    "activitySubtitle": `${this.formatDateShort(sprintData.startDate, sprintData.endDate)} | ✅ ${sprintData.status} | ${sprintData.completionRate}% Complete`,
                     "activityImage": "https://img.icons8.com/fluency/96/rocket.png",
-                    "text": this.generateSprintReportContent(sprintData, workBreakdown, priorityData, actionItems, resources, achievements),
+                    "text": this.generateSprintReportContent(sprintData, workBreakdown, priorityData, actionItems, resources, achievements) + (data.customContent ? `\n\n${data.customContent}` : ''),
                     "markdown": true
                 }
             ],
@@ -469,7 +485,7 @@ ${achievements.map(achievement => `    ✅ ${achievement.title}`).join('\n')}
      * Send message to Teams webhook
      */
     private async sendTeamsMessage(messageCard: any): Promise<void> {
-        const response = await axios.post(this.webhookUrl, messageCard, {
+        const response = await axios.post(this.teamsWebhookUrl, messageCard, {
             headers: {
                 'Content-Type': 'application/json'
             }
@@ -492,6 +508,7 @@ ${achievements.map(achievement => `    ✅ ${achievement.title}`).join('\n')}
             resources?: Array<{type: string; description: string; access: string; url?: string}>;
             achievements?: string[];
             priority?: 'low' | 'normal' | 'high' | 'critical';
+            customContent?: string;
         }
     ): Promise<void> {
         // Transform actionItems to include priority field
@@ -510,8 +527,8 @@ ${achievements.map(achievement => `    ✅ ${achievement.title}`).join('\n')}
 
         const data: TeamNotificationData = {
             type: 'sprint-report',
-            title: `Sprint ${sprintData.sprintId} - Professional Report`,
-            subtitle: `${sprintData.period} | ${sprintData.status} | ${sprintData.completionRate}% Complete`,
+            title: `${sprintData.sprintId} - Sprint Report`,
+            subtitle: `${this.formatDateShort(sprintData.startDate, sprintData.endDate)} | ${sprintData.status} | ${sprintData.completionRate}% Complete`,
             priority: options?.priority || 'normal',
             sprintData,
             workBreakdown,
