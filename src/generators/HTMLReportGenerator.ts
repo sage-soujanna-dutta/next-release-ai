@@ -69,6 +69,8 @@ class SprintReportHTMLGenerator {
   private generateCSS(): string {
     return `
     <style>
+      @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+      
       * {
         margin: 0;
         padding: 0;
@@ -76,10 +78,10 @@ class SprintReportHTMLGenerator {
       }
       
       body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-family: 'Roboto', sans-serif;
         line-height: 1.6;
         color: #333;
-        background-color: #f8f9fa;
+        background-color: #f4f7fa;
         padding: 20px;
       }
       
@@ -88,21 +90,21 @@ class SprintReportHTMLGenerator {
         margin: 0 auto;
         background: white;
         border-radius: 12px;
-        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         overflow: hidden;
       }
       
       .header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        background: linear-gradient(135deg, #007bff 0%, #6610f2 100%);
         color: white;
-        padding: 30px;
+        padding: 40px;
         text-align: center;
       }
       
       .header h1 {
-        font-size: 2.5rem;
+        font-size: 2.8rem;
         margin-bottom: 10px;
-        font-weight: 300;
+        font-weight: 400;
       }
       
       .header .subtitle {
@@ -115,66 +117,82 @@ class SprintReportHTMLGenerator {
       }
       
       .section {
-        margin-bottom: 40px;
+        margin-bottom: 50px;
       }
       
       .section h2 {
-        color: #2c3e50;
-        border-bottom: 3px solid #667eea;
+        color: #343a40;
+        border-bottom: 3px solid #007bff;
         padding-bottom: 10px;
-        margin-bottom: 20px;
-        font-size: 1.8rem;
+        margin-bottom: 30px;
+        font-size: 2rem;
+        position: relative;
+      }
+      
+      .section h2::after {
+        content: '';
+        position: absolute;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, #007bff, transparent);
+        bottom: -5px;
+        left: 0;
       }
       
       .section h3 {
-        color: #34495e;
-        margin-bottom: 15px;
-        font-size: 1.4rem;
+        color: #495057;
+        margin-bottom: 20px;
+        font-size: 1.5rem;
       }
       
       .metrics-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
+        gap: 25px;
+        margin-bottom: 40px;
       }
       
       .metric-card {
         background: #f8f9fa;
-        border-left: 4px solid #667eea;
-        padding: 20px;
+        border-left: 4px solid #007bff;
+        padding: 25px;
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        transition: transform 0.3s;
+      }
+      
+      .metric-card:hover {
+        transform: translateY(-2px);
       }
       
       .metric-card h4 {
-        color: #2c3e50;
-        margin-bottom: 10px;
-        font-size: 0.9rem;
+        color: #343a40;
+        margin-bottom: 15px;
+        font-size: 1rem;
         text-transform: uppercase;
         letter-spacing: 1px;
       }
       
       .metric-card .value {
-        font-size: 2rem;
-        font-weight: bold;
-        color: #667eea;
-        margin-bottom: 5px;
+        font-size: 2.2rem;
+        font-weight: 500;
+        color: #007bff;
+        margin-bottom: 8px;
       }
       
       .metric-card .status {
         font-size: 0.9rem;
-        color: #7f8c8d;
+        color: #868e96;
       }
       
-      .status.excellent { color: #27ae60; }
-      .status.good { color: #f39c12; }
-      .status.needs-attention { color: #e74c3c; }
+      .status.excellent { color: #28a745; }
+      .status.good { color: #ffc107; }
+      .status.needs-attention { color: #dc3545; }
       
       table {
         width: 100%;
         border-collapse: collapse;
-        margin-bottom: 20px;
+        margin-bottom: 25px;
         background: white;
         border-radius: 8px;
         overflow: hidden;
@@ -182,11 +200,11 @@ class SprintReportHTMLGenerator {
       }
       
       th {
-        background: #667eea;
+        background: #007bff;
         color: white;
         padding: 15px;
         text-align: left;
-        font-weight: 600;
+        font-weight: 500;
       }
       
       td {
@@ -195,7 +213,7 @@ class SprintReportHTMLGenerator {
       }
       
       tr:hover {
-        background-color: #f8f9fa;
+        background-color: #f1f3f5;
       }
       
       .progress-bar {
@@ -209,22 +227,22 @@ class SprintReportHTMLGenerator {
       
       .progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, #667eea, #764ba2);
+        background: linear-gradient(90deg, #007bff, #6610f2);
         transition: width 0.3s ease;
       }
       
       .risk-level {
         padding: 5px 15px;
         border-radius: 20px;
-        font-weight: bold;
+        font-weight: 500;
         text-transform: uppercase;
-        font-size: 0.8rem;
+        font-size: 0.9rem;
       }
       
-      .risk-low { background: #d5f4e6; color: #27ae60; }
-      .risk-medium { background: #fef5e7; color: #f39c12; }
-      .risk-high { background: #fadbd8; color: #e74c3c; }
-      .risk-critical { background: #f5b7b1; color: #c0392b; }
+      .risk-low { background: #d4edda; color: #155724; }
+      .risk-medium { background: #fff3cd; color: #856404; }
+      .risk-high { background: #f8d7da; color: #721c24; }
+      .risk-critical { background: #f5c6cb; color: #c82333; }
       
       .priority-icon {
         display: inline-block;
@@ -233,15 +251,15 @@ class SprintReportHTMLGenerator {
         border-radius: 50%;
       }
       
-      .priority-critical { background: #e74c3c; }
-      .priority-high { background: #f39c12; }
-      .priority-medium { background: #f1c40f; }
-      .priority-low { background: #27ae60; }
+      .priority-critical { background: #dc3545; }
+      .priority-high { background: #ffc107; }
+      .priority-medium { background: #17a2b8; }
+      .priority-low { background: #28a745; }
       
       .footer {
-        background: #2c3e50;
+        background: #343a40;
         color: white;
-        padding: 20px 30px;
+        padding: 25px 30px;
         text-align: center;
         font-size: 0.9rem;
       }
@@ -249,37 +267,42 @@ class SprintReportHTMLGenerator {
       .comparison-grid {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr 1fr;
-        gap: 20px;
-        margin: 20px 0;
+        gap: 25px;
+        margin: 25px 0;
       }
       
       .comparison-card {
         text-align: center;
-        padding: 15px;
+        padding: 20px;
         background: #f8f9fa;
         border-radius: 8px;
+        transition: transform 0.3s;
+      }
+      
+      .comparison-card:hover {
+        transform: translateY(-2px);
       }
       
       .comparison-card h4 {
-        color: #2c3e50;
-        margin-bottom: 10px;
-        font-size: 0.9rem;
+        color: #343a40;
+        margin-bottom: 12px;
+        font-size: 1rem;
       }
       
       .comparison-card .value {
-        font-size: 1.5rem;
-        font-weight: bold;
-        color: #667eea;
+        font-size: 1.6rem;
+        font-weight: 500;
+        color: #007bff;
       }
       
-      .trend-up { color: #27ae60; }
-      .trend-down { color: #e74c3c; }
-      .trend-stable { color: #f39c12; }
+      .trend-up { color: #28a745; }
+      .trend-down { color: #dc3545; }
+      .trend-stable { color: #ffc107; }
       
       @media (max-width: 768px) {
         .container { margin: 10px; }
-        .header { padding: 20px; }
-        .header h1 { font-size: 2rem; }
+        .header { padding: 25px; }
+        .header h1 { font-size: 2.2rem; }
         .content { padding: 20px; }
         .metrics-grid { grid-template-columns: 1fr; }
         .comparison-grid { grid-template-columns: 1fr 1fr; }
@@ -640,7 +663,7 @@ class SprintReportHTMLGenerator {
       <h2>🎉 Key Achievements</h2>
       <ul style="list-style: none; padding: 0;">
         ${data.achievements.map(achievement => `
-        <li style="background: #f8f9fa; margin: 10px 0; padding: 15px; border-left: 4px solid #27ae60; border-radius: 4px;">
+        <li style="background: #f8f9fa; margin: 10px 0; padding: 15px; border-left: 4px solid #28a745; border-radius: 4px;">
           ✅ ${achievement}
         </li>
         `).join('')}
@@ -674,9 +697,49 @@ class SprintReportHTMLGenerator {
           ${this.generateWorkBreakdown(data)}
           ${this.generatePriorityResolution(data)}
           ${this.generateTopContributors(data)}
+          ${this.generateAchievements(data)}
           ${this.generateRiskAssessment(data)}
           ${this.generateActionItems(data)}
-          ${this.generateAchievements(data)}
+          
+          <div class="section">
+            <h2>🎯 Strategic Recommendations</h2>
+            <table>
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Recommendation</th>
+                  <th>Rationale</th>
+                  <th>Priority</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Process</strong></td>
+                  <td>Implement automated testing pipeline</td>
+                  <td>Reduce manual testing overhead and improve quality</td>
+                  <td>🔴 High</td>
+                </tr>
+                <tr>
+                  <td><strong>Team</strong></td>
+                  <td>Cross-train team members on critical components</td>
+                  <td>Reduce bus factor and improve knowledge sharing</td>
+                  <td>🟠 Medium</td>
+                </tr>
+                <tr>
+                  <td><strong>Technical</strong></td>
+                  <td>Refactor legacy components identified in this sprint</td>
+                  <td>Improve maintainability and reduce technical debt</td>
+                  <td>🟠 Medium</td>
+                </tr>
+                <tr>
+                  <td><strong>Performance</strong></td>
+                  <td>Monitor and optimize slow queries identified</td>
+                  <td>Improve user experience and system performance</td>
+                  <td>🟠 Medium</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
         
         <footer class="footer">

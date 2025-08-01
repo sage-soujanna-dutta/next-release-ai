@@ -198,4 +198,147 @@ export class JiraService {
       byType
     };
   }
+
+  // Build JQL query from criteria object
+  buildJQLQuery(options: {
+    criteria: Record<string, any>;
+    orderBy?: string;
+    maxResults?: number;
+  }): string {
+    const { criteria, orderBy = 'created' } = options;
+    const jqlParts: string[] = [];
+
+    // Handle different criteria types
+    for (const [key, value] of Object.entries(criteria)) {
+      if (value === null || value === undefined) continue;
+
+      switch (key.toLowerCase()) {
+        case 'project':
+          jqlParts.push(`project = ${value}`);
+          break;
+        case 'sprint':
+          // Handle both sprint name and sprint number
+          if (typeof value === 'string' && value.includes('SCNT-')) {
+            jqlParts.push(`sprint = "${value}"`);
+          } else {
+            jqlParts.push(`sprint = ${value}`);
+          }
+          break;
+        case 'status':
+          if (Array.isArray(value)) {
+            jqlParts.push(`status IN (${value.map(s => `"${s}"`).join(', ')})`);
+          } else {
+            jqlParts.push(`status = "${value}"`);
+          }
+          break;
+        case 'assignee':
+          if (Array.isArray(value)) {
+            jqlParts.push(`assignee IN (${value.map(a => `"${a}"`).join(', ')})`);
+          } else {
+            jqlParts.push(`assignee = "${value}"`);
+          }
+          break;
+        case 'issuetype':
+        case 'type':
+          if (Array.isArray(value)) {
+            jqlParts.push(`issuetype IN (${value.map(t => `"${t}"`).join(', ')})`);
+          } else {
+            jqlParts.push(`issuetype = "${value}"`);
+          }
+          break;
+        case 'priority':
+          if (Array.isArray(value)) {
+            jqlParts.push(`priority IN (${value.map(p => `"${p}"`).join(', ')})`);
+          } else {
+            jqlParts.push(`priority = "${value}"`);
+          }
+          break;
+        case 'component':
+        case 'components':
+          if (Array.isArray(value)) {
+            jqlParts.push(`component IN (${value.map(c => `"${c}"`).join(', ')})`);
+          } else {
+            jqlParts.push(`component = "${value}"`);
+          }
+          break;
+        case 'created':
+          if (typeof value === 'object' && value.after) {
+            jqlParts.push(`created >= "${value.after}"`);
+          }
+          if (typeof value === 'object' && value.before) {
+            jqlParts.push(`created <= "${value.before}"`);
+          }
+          break;
+        case 'updated':
+          if (typeof value === 'object' && value.after) {
+            jqlParts.push(`updated >= "${value.after}"`);
+          }
+          if (typeof value === 'object' && value.before) {
+            jqlParts.push(`updated <= "${value.before}"`);
+          }
+          break;
+        default:
+          // For custom fields or unknown fields, try basic equality
+          if (typeof value === 'string') {
+            jqlParts.push(`${key} = "${value}"`);
+          } else if (typeof value === 'number') {
+            jqlParts.push(`${key} = ${value}`);
+          }
+          break;
+      }
+    }
+
+    let jql = jqlParts.join(' AND ');
+    
+    if (orderBy) {
+      jql += ` ORDER BY ${orderBy}`;
+    }
+
+    return jql;
+  }
+
+  // Fetch issues using JQL query
+  async fetchIssuesByJQL(jqlQuery: string): Promise<JiraIssue[]> {
+    try {
+      console.log(`🔍 Executing JQL Query: ${jqlQuery}`);
+      
+      const response = await axios.get(
+        `https://${this.domain}/rest/api/3/search`,
+        {
+          headers: {
+            Authorization: `Basic ${this.token}`,
+            Accept: "application/json",
+          },
+          params: {
+            jql: jqlQuery,
+            fields: "key,summary,status,issuetype,assignee,priority,components,customfield_10004,customfield_10002,customfield_10003,customfield_10005",
+            maxResults: 100
+          }
+        }
+      );
+
+      const issues: JiraIssue[] = response.data.issues.map((issue: any) => ({
+        key: issue.key,
+        fields: {
+          summary: issue.fields.summary,
+          status: issue.fields.status,
+          issuetype: issue.fields.issuetype,
+          assignee: issue.fields.assignee,
+          priority: issue.fields.priority,
+          components: issue.fields.components,
+          customfield_10004: issue.fields.customfield_10004,
+          customfield_10002: issue.fields.customfield_10002,
+          customfield_10003: issue.fields.customfield_10003,
+          customfield_10005: issue.fields.customfield_10005,
+          storyPoints: issue.fields.customfield_10004 || issue.fields.customfield_10002 || issue.fields.customfield_10003 || issue.fields.customfield_10005 || 0
+        }
+      }));
+
+      console.log(`✅ Found ${issues.length} issues matching the query`);
+      return issues;
+    } catch (error) {
+      console.error("Error executing JQL query:", error);
+      throw new Error(`Failed to execute JQL query: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+  }
 }

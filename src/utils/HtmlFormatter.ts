@@ -43,13 +43,42 @@ export class HtmlFormatter {
             </div>
         </header>
         
-        ${aiSummary}
-        ${summary}
-        ${detailedStats}
-        ${conclusion}
-        ${buildPipelineContent}
-        ${jiraContent}
-        ${commitsContent}
+        <main class="main-content">
+            <section class="ai-summary-section">
+                <h2><i class="fas fa-robot"></i> AI-Generated Sprint Insights</h2>
+                ${aiSummary}
+            </section>
+            
+            <section class="summary-section">
+                <h2><i class="fas fa-chart-pie"></i> Sprint Overview</h2>
+                ${summary}
+            </section>
+            
+            <section class="detailed-stats-section">
+                <h2><i class="fas fa-analytics"></i> Detailed Analytics</h2>
+                ${detailedStats}
+            </section>
+            
+            <section class="conclusion-section">
+                <h2><i class="fas fa-flag-checkered"></i> Sprint Conclusion</h2>
+                ${conclusion}
+            </section>
+            
+            <section class="build-pipelines-section">
+                <h2><i class="fas fa-hammer"></i> Build Pipelines</h2>
+                ${buildPipelineContent}
+            </section>
+            
+            <section class="jira-issues-section">
+                <h2>📋 JIRA Issues</h2>
+                ${jiraContent}
+            </section>
+            
+            <section class="commits-section">
+                <h2>📦 Commits</h2>
+                ${commitsContent}
+            </section>
+        </main>
         
         <footer class="footer">
             <div class="footer-content">

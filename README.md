@@ -39,6 +39,86 @@ Open VS Code and use natural language commands:
 - *"Create a velocity report and send to Teams"*
 - *"Assess risks for tickets in my current sprint"*
 
+## 🗣️ Natural Language Commands for MCP Tools
+
+You can use the following natural language commands in VS Code Copilot, Claude Desktop, or any MCP-compatible client:
+
+### 🚀 Release Management
+- Generate release notes for sprint SCNT-2025-20
+- Create HTML release notes with modern theme for the current sprint
+- Generate markdown release notes for sprint SCNT-2025-21
+- Make release notes with minimal theme
+- Create a complete release workflow for sprint SCNT-2025-20
+- Run the full release process and publish to Confluence
+- Generate and publish release notes to both file and Confluence
+- Create release workflow without Teams notification
+- Preview release notes for sprint SCNT-2025-20
+- Show me what the release notes will look like in HTML
+- Preview markdown release notes for the current sprint
+- Publish this HTML content to Confluence
+- Update Confluence page with release notes for sprint SCNT-2025-20
+- Create new Confluence page with release content
+
+### 📊 Sprint Analytics
+- Analyze story points for the last 3 sprints
+- Compare story point completion across sprints SCNT-2025-18, 19, and 20
+- Show me story points analysis without sending to Teams
+- Generate story points report for our velocity tracking
+- Generate velocity report for our team
+- Create 6-month velocity analysis and send to Teams
+- Show velocity trends without including current sprint
+- Generate velocity report for sprints SCNT-2025-15 through 20
+- Generate sprint summary for SCNT-2025-20
+- Create detailed sprint report with team metrics
+- Sprint summary for current sprint without Teams notification
+- Show comprehensive sprint analysis for SCNT-2025-21
+
+### 🔍 JIRA Deep Analysis
+- Analyze ticket SCNT-2025-123 in detail
+- Deep analysis of PROJ-456 with comprehensive insights
+- Analyze ticket SCNT-2025-789 and send results to Teams
+- Basic analysis of my current ticket
+- Bulk analyze all tickets in sprint SCNT-2025-20
+- Analyze tickets with JQL: project = SCNT AND status = 'In Progress'
+- Bulk analyze high-risk tickets and send to Teams
+- Analyze tickets assigned to me with detailed insights
+- Generate JIRA report grouped by status for current sprint
+- Create comprehensive report with all metrics for my tickets
+- Generate risk-based report for project SCNT
+- Create JIRA report with cycle time and quality metrics
+- Assess risks for tickets in current sprint
+- Risk assessment for high-priority tickets with Teams notification
+- Evaluate risks for tickets with JQL: assignee = currentUser() AND status != Done
+- Risk analysis for tickets in epic SCNT-2025-Epic-1
+- Analyze collaboration patterns for tickets in current sprint
+- Check team engagement for tickets assigned to frontend team
+- Collaboration analysis for tickets with low activity
+- Analyze stakeholder engagement for epic tickets
+
+### ⚙️ Utilities
+- Validate my configuration
+- Check if all API connections are working
+- Test my environment setup
+- Verify configuration and permissions
+- Fetch JIRA issues for sprint SCNT-2025-20
+- Get all issues from current sprint
+- Show me raw JIRA data for sprint SCNT-2025-21
+- Retrieve issues for sprint analysis
+- Fetch GitHub commits from last week
+- Get all commits since January 1st, 2024
+- Show me recent commits for analysis
+- Retrieve commits from the last 30 days
+- Get status for sprint SCNT-2025-20
+- Show me current sprint statistics
+- Check sprint health for SCNT-2025-21
+- Sprint status overview please
+
+#### You can also chain commands, e.g.:
+- First validate my configuration, then generate release notes for sprint SCNT-2025-20, and finally publish to Confluence
+- Analyze story points for the last 3 sprints, and if completion rate is below 80%, also run risk assessment
+
+For more, see your `MCP_COMMANDS.md` for the full reference and advanced usage!
+
 ## 🛠️ **Core Capabilities**
 
 ### 🎯 **Release Generation**

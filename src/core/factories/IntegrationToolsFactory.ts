@@ -15,7 +15,6 @@ export class IntegrationToolsFactory {
         this.createTeamsNotificationTool(),
         this.createConfluencePublishTool(),
         this.createHtmlReportGeneratorTool(),
-        this.createPdfReportGeneratorTool(),
         this.createTeamsReleaseNotificationTool(),
         this.createEnhancedTeamsIntegrationTool()
       ]
@@ -186,37 +185,149 @@ export class IntegrationToolsFactory {
         try {
           this.validateRequiredArgs(args, ["reportType", "data"]);
 
-          const htmlFormatter = this.services.get<any>('htmlFormatter');
-          
-          const reportConfig = {
-            type: args.reportType,
-            data: args.data,
-            style: args.templateStyle || 'professional',
-            includeCharts: args.includeCharts !== false,
-            timestamp: new Date().toISOString()
-          };
-
-          const htmlContent = await htmlFormatter.generateReport(reportConfig);
-          const fileName = `${args.reportType}_${Date.now()}.html`;
-
-          // Save to file service
           const fileService = this.services.get<any>('fileService');
-          const filePath = await fileService.saveHtmlReport(fileName, htmlContent);
+          
+          // Generate HTML content based on report type
+          const htmlContent = this.generateHtmlContent(args.reportType, args.data, args.templateStyle || 'professional');
+          
+          // Save to file
+          const fileName = `${args.reportType}_report_${Date.now()}.html`;
+          const filePath = await fileService.saveReleaseNotes(htmlContent, fileName);
 
           this.logExecution({ toolName: this.name, startTime, args });
 
           return this.createSuccessResponse(
             `📊 HTML Report Generated Successfully!\n\n` +
             `📄 Report Type: ${args.reportType}\n` +
-            `🎨 Template Style: ${reportConfig.style}\n` +
-            `📈 Charts Included: ${reportConfig.includeCharts ? 'Yes' : 'No'}\n` +
-            `📁 File Path: ${filePath}\n` +
-            `📏 Content Size: ${Math.round(htmlContent.length / 1024)}KB\n` +
-            `🕐 Generated: ${new Date().toLocaleString()}`
+            `🎨 Style: ${args.templateStyle || 'professional'}\n` +
+            `📁 File: ${fileName}\n` +
+            `📍 Path: ${filePath}\n` +
+            `📊 Data Points: ${Object.keys(args.data).length}\n` +
+            `📅 Generated: ${new Date().toLocaleString()}`
           );
         } catch (error: any) {
           return this.createErrorResponse(`Failed to generate HTML report: ${error.message}`);
         }
+      }
+
+      private generateHtmlContent(reportType: string, data: any, style: string): string {
+        const title = data.reportTitle || `${reportType} Report`;
+        const date = new Date().toLocaleString();
+        
+        return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1200px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; }
+        .header h1 { margin: 0; font-size: 2.5em; font-weight: 300; }
+        .content { padding: 30px; }
+        .metrics-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .metric-card { background: #f8f9fa; border-left: 4px solid #667eea; padding: 20px; border-radius: 8px; }
+        .metric-value { font-size: 2em; font-weight: bold; color: #333; margin-bottom: 5px; }
+        .metric-label { color: #666; font-size: 0.9em; text-transform: uppercase; letter-spacing: 1px; }
+        .section { margin-bottom: 40px; }
+        .section h2 { color: #333; border-bottom: 2px solid #667eea; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #ddd; }
+        th { background-color: #f8f9fa; font-weight: 600; }
+        .status-good { color: #28a745; }
+        .status-warning { color: #ffc107; }
+        .status-error { color: #dc3545; }
+        pre { background: #f8f9fa; padding: 20px; border-radius: 8px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>${title}</h1>
+            <p>Generated on ${date}</p>
+        </div>
+        <div class="content">
+            ${this.renderDataSections(data)}
+        </div>
+    </div>
+</body>
+</html>`;
+      }
+
+      private renderDataSections(data: any): string {
+        let sections = '';
+        
+        // Executive Summary
+        if (data.executiveSummary) {
+          sections += `<div class="section">
+            <h2>📊 Executive Summary</h2>
+            <div class="metrics-grid">
+              ${Object.entries(data.executiveSummary).map(([key, value]) => 
+                `<div class="metric-card"><div class="metric-value">${value}</div><div class="metric-label">${key.replace(/([A-Z])/g, ' $1').trim()}</div></div>`
+              ).join('')}
+            </div>
+          </div>`;
+        }
+        
+        // Cycle Time Analysis
+        if (data.cycleTimeAnalysis) {
+          sections += `<div class="section">
+            <h2>� Cycle Time Analysis</h2>
+            ${data.cycleTimeAnalysis.distribution ? `
+            <h3>Distribution</h3>
+            <table>
+              <thead><tr><th>Range</th><th>Count</th><th>Percentage</th></tr></thead>
+              <tbody>
+                ${data.cycleTimeAnalysis.distribution.map((item: any) => 
+                  `<tr><td>${item.range}</td><td>${item.count}</td><td>${item.percentage}</td></tr>`
+                ).join('')}
+              </tbody>
+            </table>` : ''}
+          </div>`;
+        }
+        
+        // Quality Metrics
+        if (data.qualityMetrics && data.qualityMetrics.bugAnalysis) {
+          const bugs = data.qualityMetrics.bugAnalysis;
+          sections += `<div class="section">
+            <h2>🐛 Quality Analysis</h2>
+            <div class="metrics-grid">
+              <div class="metric-card"><div class="metric-value">${bugs.totalBugs}</div><div class="metric-label">Total Bugs</div></div>
+              <div class="metric-card"><div class="metric-value">${bugs.bugRatio}</div><div class="metric-label">Bug Ratio</div></div>
+              <div class="metric-card"><div class="metric-value">${bugs.defectDensity}</div><div class="metric-label">Defect Density</div></div>
+            </div>
+          </div>`;
+        }
+        
+        // Insights
+        if (data.insights) {
+          sections += `<div class="section">
+            <h2>📈 Key Insights</h2>
+            ${data.insights.findings ? `
+            <h3>Findings</h3>
+            <ul>
+              ${data.insights.findings.map((finding: string) => `<li>${finding}</li>`).join('')}
+            </ul>` : ''}
+            ${data.insights.recommendations ? `
+            <h3>🔧 Recommendations</h3>
+            <div style="background: #e8f4fd; border: 1px solid #b3d9ff; border-radius: 8px; padding: 20px;">
+              <ul>
+                ${data.insights.recommendations.map((rec: string) => `<li>${rec}</li>`).join('')}
+              </ul>
+            </div>` : ''}
+          </div>`;
+        }
+        
+        // Raw data fallback
+        if (!sections) {
+          sections = `<div class="section">
+            <h2>Report Data</h2>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+          </div>`;
+        }
+        
+        return sections;
       }
     })(this.services);
   }
@@ -365,126 +476,5 @@ export class IntegrationToolsFactory {
         }
       }
     })(this.services, this.toolInstances);
-  }
-
-  private createPdfReportGeneratorTool(): MCPTool {
-    return new (class extends BaseMCPTool {
-      name = "generate_pdf_report";
-      description = "Generate high-quality PDF reports from sprint data with professional layouts";
-      inputSchema = {
-        type: "object",
-        properties: {
-          reportData: {
-            type: "object",
-            description: "Sprint or release data to include in the PDF report"
-          },
-          reportType: {
-            type: "string",
-            enum: ["sprint_review", "release_notes", "executive_summary", "team_metrics"],
-            description: "Type of PDF report to generate"
-          },
-          outputPath: {
-            type: "string",
-            description: "Output path for the PDF file (optional, defaults to reports/ directory)"
-          },
-          config: {
-            type: "object",
-            properties: {
-              format: {
-                type: "string",
-                enum: ["A4", "Letter"],
-                description: "Page format (default: A4)"
-              },
-              orientation: {
-                type: "string", 
-                enum: ["portrait", "landscape"],
-                description: "Page orientation (default: portrait)"
-              },
-              includeCharts: {
-                type: "boolean",
-                description: "Include charts and graphs (default: true)"
-              },
-              theme: {
-                type: "string",
-                enum: ["professional", "modern", "minimal"],
-                description: "Visual theme (default: professional)"
-              }
-            }
-          },
-          sendToTeams: {
-            type: "boolean",
-            description: "Send PDF to Teams channel after generation (default: false)"
-          },
-          teamsMessage: {
-            type: "string",
-            description: "Custom message to include with Teams notification"
-          }
-        },
-        required: ["reportData", "reportType"]
-      };
-
-      constructor(private services: ServiceRegistry) {
-        super();
-      }
-
-      async execute(args: any): Promise<MCPToolResult> {
-        const startTime = Date.now();
-        try {
-          this.validateRequiredArgs(args, ["reportData", "reportType"]);
-
-          // Import the PDF generator here to avoid circular dependencies  
-          const { SprintReportPDFGenerator } = await import("../../generators/PDFReportGenerator.js");
-          const { SprintReportHTMLGenerator } = await import("../../generators/HTMLReportGenerator.js");
-          
-          const pdfGenerator = new SprintReportPDFGenerator();
-          const htmlGenerator = new SprintReportHTMLGenerator();
-
-          // Generate output path if not provided
-          const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-          const outputPath = args.outputPath || `./reports/${args.reportType}_${timestamp}.pdf`;
-
-          // Prepare PDF configuration
-          const pdfConfig = {
-            format: args.config?.format || 'A4',
-            orientation: args.config?.orientation || 'portrait',
-            includeCharts: args.config?.includeCharts !== false,
-            theme: args.config?.theme || 'professional',
-            ...args.config
-          };
-
-          // Generate the PDF report
-          await pdfGenerator.generatePDF(args.reportData, outputPath, pdfConfig);
-
-          let teamsResult = null;
-          if (args.sendToTeams) {
-            const teamsService = this.services.get<any>('teamsService');
-            const message = args.teamsMessage || `📊 New ${args.reportType} PDF report has been generated!`;
-            
-            teamsResult = await teamsService.sendNotification({
-              message: message,
-              title: `PDF Report Generated: ${args.reportType}`,
-              includeAttachment: true,
-              attachmentPath: outputPath
-            });
-          }
-
-          this.logExecution({ toolName: this.name, startTime, args });
-
-          return this.createSuccessResponse(
-            `📄 PDF Report Generated Successfully!\n\n` +
-            `📊 Report Type: ${args.reportType}\n` +
-            `📁 Output Path: ${outputPath}\n` +
-            `📋 Format: ${pdfConfig.format} (${pdfConfig.orientation})\n` +
-            `🎨 Theme: ${pdfConfig.theme}\n` +
-            `📈 Charts Included: ${pdfConfig.includeCharts ? 'Yes' : 'No'}\n` +
-            `💬 Teams Notification: ${args.sendToTeams ? 'Sent' : 'Not sent'}\n` +
-            `🕐 Generated: ${new Date().toLocaleString()}\n` +
-            `⚡ Execution Time: ${Date.now() - startTime}ms`
-          );
-        } catch (error: any) {
-          return this.createErrorResponse(`Failed to generate PDF report: ${error.message}`);
-        }
-      }
-    })(this.services);
   }
 }

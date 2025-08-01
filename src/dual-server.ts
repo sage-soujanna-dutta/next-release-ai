@@ -54,37 +54,62 @@ class DualModeMCPServer {
       const { name: toolName, arguments: args } = request.params;
 
       try {
+        // Add logging for debugging
+        console.error(`🔧 Executing tool: ${toolName} with args:`, JSON.stringify(args));
+        
         const tool = this.toolFactory.getTool(toolName);
         
         if (!tool) {
+          const errorMessage = `Error: Tool '${toolName}' not found. Available tools: ${this.toolFactory.getAllTools().map(t => t.name).join(', ')}`;
+          console.error(`❌ ${errorMessage}`);
+          
           return {
             content: [
               {
                 type: "text",
-                text: `Error: Tool '${toolName}' not found. Available tools: ${this.toolFactory.getAllTools().map(t => t.name).join(', ')}`,
+                text: errorMessage,
               },
             ],
             isError: true,
           };
         }
 
-        const result = await tool.execute(args || {});
+        console.error(`✅ Found tool: ${toolName}, executing...`);
+        
+        // Execute with timeout protection
+        const result = await Promise.race([
+          tool.execute(args || {}),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Tool execution timeout after 120 seconds')), 120000)
+          )
+        ]) as any;
 
-        return {
-          content: [
+        console.error(`✅ Tool execution completed for: ${toolName}`);
+        console.error(`📊 Result type: ${result.isError ? 'ERROR' : 'SUCCESS'}`);
+
+        // Ensure proper response format
+        const response = {
+          content: Array.isArray(result.content) ? result.content : [
             {
               type: "text",
-              text: result.content,
-            },
+              text: typeof result.content === 'string' ? result.content : JSON.stringify(result.content)
+            }
           ],
-          isError: result.isError,
+          isError: result.isError || false,
         };
+
+        return response;
+        
       } catch (error: any) {
+        const errorMessage = `Error executing tool '${toolName}': ${error.message}`;
+        console.error(`❌ ${errorMessage}`);
+        console.error(`❌ Stack trace:`, error.stack);
+        
         return {
           content: [
             {
               type: "text",
-              text: `Error executing tool '${toolName}': ${error.message}`,
+              text: errorMessage,
             },
           ],
           isError: true,
@@ -195,14 +220,42 @@ class DualModeMCPServer {
   }
 
   async startStdio(): Promise<void> {
-    const transport = new StdioServerTransport();
-    await this.server.connect(transport);
-    
-    console.error("🚀 Next Release AI MCP Server (STDIO) started successfully!");
-    console.error("📱 Mode: STDIO (Compatible with Claude Desktop and MCP clients)");
-    console.error(`📊 Total tools loaded: ${this.toolFactory.getToolCount()}`);
-    console.error(`📂 Categories available: ${this.toolFactory.getCategoryCount()}`);
-    console.error("✅ Server ready for MCP client connections");
+    try {
+      const transport = new StdioServerTransport();
+      await this.server.connect(transport);
+      
+      console.error("🚀 Next Release AI MCP Server (STDIO) started successfully!");
+      console.error("📱 Mode: STDIO (Compatible with Claude Desktop and MCP clients)");
+      console.error(`📊 Total tools loaded: ${this.toolFactory.getToolCount()}`);
+      console.error(`📂 Categories available: ${this.toolFactory.getCategoryCount()}`);
+      console.error("✅ Server ready for MCP client connections");
+      
+      // Handle process signals gracefully
+      process.on('SIGINT', () => {
+        console.error('🛑 SIGINT received, shutting down gracefully...');
+        process.exit(0);
+      });
+      
+      process.on('SIGTERM', () => {
+        console.error('🛑 SIGTERM received, shutting down gracefully...');
+        process.exit(0);
+      });
+      
+      // Handle uncaught errors
+      process.on('uncaughtException', (error) => {
+        console.error('❌ Uncaught Exception:', error);
+        process.exit(1);
+      });
+      
+      process.on('unhandledRejection', (reason, promise) => {
+        console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+        process.exit(1);
+      });
+      
+    } catch (error) {
+      console.error('❌ Failed to start STDIO server:', error);
+      throw error;
+    }
   }
 
   async startHttp(): Promise<void> {

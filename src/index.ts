@@ -67,12 +67,7 @@ class MCPServer {
         const result = await tool.execute(args || {});
 
         return {
-          content: [
-            {
-              type: "text",
-              text: result.content,
-            },
-          ],
+          content: result.content,
           isError: result.isError,
         };
       } catch (error: any) {
