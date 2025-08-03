@@ -493,8 +493,8 @@ export class EnhancedJiraService {
    */
   async getSprintMetrics(sprintNumber: string): Promise<any> {
     try {
-      // Search for issues in the sprint
-      const jql = `sprint = "${sprintNumber}" OR fixVersion = "${sprintNumber}"`;
+      // Search for issues in the sprint using correct JQL format
+      const jql = `sprint = ${sprintNumber}`;
       const searchResult = await this.searchTickets(jql, {
         fields: [
           'key', 'summary', 'status', 'assignee', 'priority', 'issuetype',
@@ -539,6 +539,73 @@ export class EnhancedJiraService {
       const byPriority = this.groupBy(issues, (issue: any) => issue.fields.priority?.name || 'No Priority');
       const byType = this.groupBy(issues, (issue: any) => issue.fields.issuetype?.name || 'Unknown');
 
+      // Transform to expected format for HTML generator
+      const getTypeCount = (types: string[]) => {
+        return types.reduce((count, type) => count + (byType[type]?.length || 0), 0);
+      };
+
+      const userStoriesCount = getTypeCount(['Story', 'User Story']);
+      const bugFixesCount = getTypeCount(['Bug', 'Defect']);
+      const tasksCount = getTypeCount(['Task', 'Technical Task']);
+      const epicsCount = getTypeCount(['Epic']);
+      const improvementsCount = getTypeCount(['Improvement', 'Enhancement']);
+
+      const workBreakdown = {
+        userStories: { 
+          count: userStoriesCount, 
+          percentage: totalIssues > 0 ? Math.round((userStoriesCount / totalIssues) * 100) : 0 
+        },
+        bugFixes: { 
+          count: bugFixesCount, 
+          percentage: totalIssues > 0 ? Math.round((bugFixesCount / totalIssues) * 100) : 0 
+        },
+        tasks: { 
+          count: tasksCount, 
+          percentage: totalIssues > 0 ? Math.round((tasksCount / totalIssues) * 100) : 0 
+        },
+        epics: { 
+          count: epicsCount, 
+          percentage: totalIssues > 0 ? Math.round((epicsCount / totalIssues) * 100) : 0 
+        },
+        improvements: { 
+          count: improvementsCount, 
+          percentage: totalIssues > 0 ? Math.round((improvementsCount / totalIssues) * 100) : 0 
+        }
+      };
+
+      // Transform priority data to expected format
+      const getPriorityData = (priority: string) => {
+        const priorityIssues = byPriority[priority] || [];
+        const resolved = priorityIssues.filter((issue: any) => 
+          ['Done', 'Closed', 'Resolved'].includes(issue.fields.status?.name)
+        ).length;
+        return { total: priorityIssues.length, resolved };
+      };
+
+      const priorityData = {
+        critical: getPriorityData('Critical'),
+        high: getPriorityData('High'),
+        medium: getPriorityData('Medium'),
+        low: getPriorityData('Low'),
+        blockers: getPriorityData('Blocker')
+      };
+
+      // Transform contributors data
+      const topContributors = Object.keys(byAssignee).map(assignee => ({
+        name: assignee,
+        commits: 0, // We don't have commit data in this context
+        issues: byAssignee[assignee].length,
+        storyPoints: byAssignee[assignee].reduce((sum: number, issue: any) => {
+          const points = 
+            issue.fields.customfield_10004 || 
+            issue.fields.customfield_10002 || 
+            issue.fields.customfield_10003 || 
+            issue.fields.customfield_10005 || 
+            0;
+          return sum + (['Done', 'Closed', 'Resolved'].includes(issue.fields.status?.name) ? points : 0);
+        }, 0)
+      })).sort((a, b) => (b.issues + b.storyPoints) - (a.issues + a.storyPoints)).slice(0, 10);
+
       return {
         sprintId: sprintNumber,
         period: `Sprint ${sprintNumber}`,
@@ -549,11 +616,23 @@ export class EnhancedJiraService {
         completedStoryPoints,
         storyPointsCompletion: totalStoryPoints > 0 ? Math.round((completedStoryPoints / totalStoryPoints) * 100) : 0,
         issues,
+        // Legacy breakdown format
         breakdown: {
           byStatus,
           byAssignee,
           byPriority,
           byType
+        },
+        // New format expected by HTML generator
+        workBreakdown,
+        priorityData,
+        topContributors,
+        velocityData: {
+          current: completedStoryPoints,
+          target: totalStoryPoints,
+          completionRate: totalStoryPoints > 0 ? Math.round((completedStoryPoints / totalStoryPoints) * 100) : 0,
+          velocity: completedStoryPoints,
+          trend: 'stable' as const
         },
         contributors: Object.keys(byAssignee).map(assignee => ({
           name: assignee,

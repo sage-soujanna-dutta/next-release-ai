@@ -198,4 +198,116 @@ export class TeamsIntegrationTool {
       return `❌ Teams integration validation failed: ${(error as Error).message}`;
     }
   }
+
+  /**
+   * Execute enhanced Teams integration with adaptive cards and workflow notifications
+   */
+  async executeIntegration(config: {
+    type: string;
+    data: any;
+    urgency?: string;
+    interactive?: boolean;
+    audience?: string[];
+  }): Promise<{ notificationId: string; status: string }> {
+    try {
+      console.log(`🔗 Executing enhanced Teams integration: ${config.type}`);
+
+      let message = '';
+      let title = '';
+
+      switch (config.type) {
+        case 'sprint_completion':
+          title = `🚀 Sprint ${config.data.sprintNumber} Report`;
+          message = this.buildSprintCompletionMessage(config.data);
+          break;
+        case 'velocity_alert':
+          title = `📊 Velocity Alert`;
+          message = this.buildVelocityAlertMessage(config.data);
+          break;
+        case 'release_announcement':
+          title = `🎉 Release Announcement`;
+          message = this.buildReleaseAnnouncementMessage(config.data);
+          break;
+        case 'custom_workflow':
+          title = config.data.title || '🔧 Workflow Notification';
+          message = config.data.message || 'Workflow completed successfully';
+          break;
+        default:
+          throw new Error(`Unknown integration type: ${config.type}`);
+      }
+
+      // Build adaptive card with urgency styling
+      const urgencyColor = this.getUrgencyColor(config.urgency);
+      const cardData = {
+        title,
+        message,
+        urgency: config.urgency || 'medium',
+        urgencyColor,
+        interactive: config.interactive !== false,
+        data: config.data
+      };
+
+      // Send Teams notification
+      await this.teamsService.sendNotification({
+        title,
+        message,
+        urgency: config.urgency,
+        data: config.data
+      });
+
+      const notificationId = `teams-${Date.now()}`;
+
+      return {
+        notificationId,
+        status: 'success'
+      };
+    } catch (error) {
+      console.error(`❌ Failed to execute enhanced Teams integration:`, error);
+      throw error;
+    }
+  }
+
+  private buildSprintCompletionMessage(data: any): string {
+    return `
+**Sprint Summary:**
+• **Dates:** ${data.sprintDates || 'N/A'}
+• **Completion Rate:** ${data.completionRate || 'N/A'}
+• **Story Points:** ${data.storyPoints || 'N/A'}
+• **Team Size:** ${data.contributors || 'N/A'} contributors
+• **Development Activity:** ${data.commits || 'N/A'} commits
+• **Sprint Status:** ${data.sprintStatus || 'N/A'}
+
+${data.filePath ? `📄 **Report:** ${data.filePath}` : ''}
+`;
+  }
+
+  private buildVelocityAlertMessage(data: any): string {
+    return `
+**Velocity Analysis:**
+• **Current Sprint:** ${data.currentVelocity || 'N/A'} points
+• **Previous Sprint:** ${data.previousVelocity || 'N/A'} points
+• **Trend:** ${data.trend || 'N/A'}
+• **Recommendation:** ${data.recommendation || 'Review sprint planning'}
+`;
+  }
+
+  private buildReleaseAnnouncementMessage(data: any): string {
+    return `
+**Release Details:**
+• **Version:** ${data.version || 'N/A'}
+• **Features:** ${data.features || 'N/A'} new features
+• **Bug Fixes:** ${data.bugFixes || 'N/A'} fixes
+• **Release Date:** ${data.releaseDate || 'N/A'}
+`;
+  }
+
+  private getUrgencyColor(urgency?: string): string {
+    switch (urgency) {
+      case 'critical': return '#FF0000';
+      case 'high': return '#FF6600';
+      case 'medium': return '#0078D4';
+      case 'low': return '#00BCF2';
+      default: return '#0078D4';
+    }
+  }
 }

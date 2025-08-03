@@ -67,11 +67,12 @@ export class ReleaseNotesService {
     let commits: any[] = [];
     let buildPipelineData: any[] = [];
     let sprintName = sprintNumber; // Default to sprint number
+    let sprintDetails: any = null; // Store sprint details for formatters
 
     if (sprintNumber) {
       // Fetch sprint details first to get the date range
       console.log(`� Fetching sprint details for ${sprintNumber}...`);
-      const sprintDetails = await this.jiraService.getSprintDetails(sprintNumber);
+      sprintDetails = await this.jiraService.getSprintDetails(sprintNumber);
       console.log(`✅ Found sprint: ${sprintDetails.name}`);
       sprintName = sprintDetails.name; // Use the full sprint name
       
@@ -115,7 +116,7 @@ export class ReleaseNotesService {
     } else {
       console.log('📝 Generating Markdown content...');
       const markdownFormatter = new MarkdownFormatter();
-      content = markdownFormatter.format(jiraIssues, commits);
+      content = markdownFormatter.format(jiraIssues, commits, sprintName, sprintDetails);
     }
 
     // Always save to file
