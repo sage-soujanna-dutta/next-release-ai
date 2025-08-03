@@ -33,7 +33,7 @@ export class MarkdownFormatter {
     const priorityStatus = this.getPriorityStatus(data.jiraIssues);
     const topContributors = this.getTopContributors(data.githubCommits, data.jiraIssues);
     
-    return `# 🚀 ${sprintName} - Professional Sprint Report
+    return `# 🚀 ${sprintName} - Sprint Report
 
 *Jul 9 - Jul 22, 2025 | ✅ Completed | ${completionRate}% Complete*
 
