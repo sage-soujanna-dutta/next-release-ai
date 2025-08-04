@@ -80,7 +80,7 @@ class DualModeMCPServer {
         const result = await Promise.race([
           tool.execute(args || {}),
           new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Tool execution timeout after 120 seconds')), 120000)
+            setTimeout(() => reject(new Error('Tool execution timeout after 300 seconds')), 300000)
           )
         ]) as any;
 

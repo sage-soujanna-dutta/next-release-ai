@@ -1,5 +1,6 @@
 import { MCPTool, MCPToolCategory, BaseMCPTool, MCPToolResult } from "../BaseMCPTool.js";
 import { ServiceRegistry } from "../MCPToolFactory.js";
+import { STATIC_BOARD_MAPPINGS, BOARD_NAME_MAPPINGS, BoardLookup, BoardMapping } from "../../utils/BoardMappings.js";
 
 export class JiraToolsFactory {
   constructor(
@@ -14,6 +15,8 @@ export class JiraToolsFactory {
       tools: [
         this.createFetchJiraIssuesTool(),
         this.createFindBoardByProjectTool(),
+        this.createListAllBoardsTool(),
+        this.createFindBoardIdTool(),
         this.createBulkJiraUpdateTool(),
         this.createJiraQueryBuilderTool(),
         this.createAdvancedJiraFetchTool(),
@@ -743,6 +746,444 @@ export class JiraToolsFactory {
         } catch (error: any) {
           return this.createErrorResponse(`Failed to find boards: ${error.message}`);
         }
+      }
+    })(this.services);
+  }
+
+  private createFindBoardIdTool(): MCPTool {
+    return new (class extends BaseMCPTool {
+      name = "find_board_id";
+      description = "Find JIRA board ID by board name with exact or partial matching";
+      inputSchema = {
+        type: "object",
+        properties: {
+          boardName: {
+            type: "string",
+            description: "Board name to search for (supports partial matching)"
+          },
+          exactMatch: {
+            type: "boolean",
+            description: "Whether to use exact name matching (default: false for partial matching)"
+          },
+          maxResults: {
+            type: "number",
+            description: "Maximum number of results to return (default: 10)"
+          }
+        },
+        required: ["boardName"]
+      };
+
+      constructor(private services: ServiceRegistry) {
+        super();
+      }
+
+      async execute(args: any): Promise<MCPToolResult> {
+        const startTime = Date.now();
+        
+        try {
+          const { boardName, exactMatch = false, maxResults = 10 } = args;
+          
+          if (!boardName || typeof boardName !== 'string') {
+            return this.createErrorResponse("Board name is required and must be a string");
+          }
+
+          const searchTerm = boardName.trim();
+          if (searchTerm.length === 0) {
+            return this.createErrorResponse("Board name cannot be empty");
+          }
+
+          let matchingBoards: BoardMapping[] = [];
+
+          if (exactMatch) {
+            // Exact match search
+            // Check project-based mappings
+            const projectBoard = Object.values(STATIC_BOARD_MAPPINGS).find(
+              board => board.name.toLowerCase() === searchTerm.toLowerCase()
+            );
+            if (projectBoard) {
+              matchingBoards.push(projectBoard);
+            }
+
+            // Check name-based mappings
+            const nameBoard = Object.values(BOARD_NAME_MAPPINGS).find(
+              (board: BoardMapping) => board.name.toLowerCase() === searchTerm.toLowerCase()
+            );
+            if (nameBoard) {
+              matchingBoards.push(nameBoard);
+            }
+          } else {
+            // Partial match search using BoardLookup
+            matchingBoards = BoardLookup.searchBoardsByName(searchTerm);
+          }
+
+          // Remove duplicates (in case a board appears in both mappings)
+          const uniqueBoards = matchingBoards.filter((board, index, self) => 
+            index === self.findIndex(b => b.id === board.id)
+          );
+
+          // Limit results
+          const limitedResults = uniqueBoards.slice(0, maxResults);
+
+          if (limitedResults.length === 0) {
+            return this.createSuccessResponse(
+              `🔍 **No boards found for: "${searchTerm}"**\n\n` +
+              `💡 **Suggestions:**\n` +
+              `  • Try a shorter search term\n` +
+              `  • Check spelling\n` +
+              `  • Use partial matching (exactMatch: false)\n\n` +
+              `⚡ **Search Time:** ${Date.now() - startTime}ms`
+            );
+          }
+
+          // Format results
+          const resultsText = limitedResults.map((board, index) => {
+            const projectInfo = board.projectKey ? 
+              ` (Project: ${board.projectName || board.projectKey})` : 
+              '';
+            
+            return `${index + 1}. **${board.name}**\n` +
+                   `   🆔 Board ID: \`${board.id}\`\n` +
+                   `   🏷️ Type: ${board.type}${projectInfo}`;
+          }).join('\n\n');
+
+          const matchType = exactMatch ? 'Exact' : 'Partial';
+          const totalAvailable = uniqueBoards.length;
+          const showingCount = limitedResults.length;
+
+          return this.createSuccessResponse(
+            `🎯 **Board ID Search Results** (${matchType} Match)\n\n` +
+            `🔍 **Search Term:** "${searchTerm}"\n` +
+            `📊 **Results:** Showing ${showingCount} of ${totalAvailable} matches\n\n` +
+            `📋 **Found Boards:**\n\n${resultsText}\n\n` +
+            (totalAvailable > maxResults ? 
+              `💡 **Note:** ${totalAvailable - maxResults} more results available. Increase maxResults to see more.\n\n` : 
+              '') +
+            `⚡ **Search Time:** ${Date.now() - startTime}ms\n\n` +
+            `🔧 **Quick Copy:**\n` +
+            (limitedResults.length === 1 ? 
+              `Board ID: ${limitedResults[0].id}` :
+              limitedResults.map(board => `${board.name}: ${board.id}`).slice(0, 3).join('\n'))
+          );
+
+        } catch (error: any) {
+          return this.createErrorResponse(`Failed to find board ID: ${error.message}`);
+        }
+      }
+    })(this.services);
+  }
+
+  private createListAllBoardsTool(): MCPTool {
+    return new (class extends BaseMCPTool {
+      name = "list_all_jira_boards";
+      description = "List all JIRA boards with IDs and names, includes static mappings for offline use";
+      inputSchema = {
+        type: "object",
+        properties: {
+          useStatic: {
+            type: "boolean",
+            description: "Use static board mappings instead of live API call (default: false)"
+          },
+          updateStatic: {
+            type: "boolean", 
+            description: "Fetch from API and update static mappings (default: false)"
+          },
+          includeProjects: {
+            type: "boolean",
+            description: "Include project information for each board (default: true)"
+          },
+          format: {
+            type: "string",
+            enum: ["summary", "detailed", "mapping", "static", "javascript"],
+            description: "Output format: summary, detailed, mapping (JSON), static (current static data), or javascript (reusable object)"
+          },
+          filterByType: {
+            type: "string",
+            enum: ["scrum", "kanban", "simple"],
+            description: "Filter boards by type (optional)"
+          },
+          searchTerm: {
+            type: "string",
+            description: "Search boards by name or project (optional)"
+          }
+        }
+      };
+
+      constructor(private services: ServiceRegistry) {
+        super();
+      }
+
+      async execute(args: any): Promise<MCPToolResult> {
+        const startTime = Date.now();
+        
+        try {
+          // Default to static data to avoid timeouts (useStatic defaults to true)
+          const useStatic = args.useStatic !== false;
+          
+          if (useStatic && !args.updateStatic) {
+            return this.handleStaticRequest(args);
+          }
+
+          // Only fetch from API if explicitly requested
+          if (args.updateStatic === true || args.useStatic === false) {
+            // Fetch from API
+            const jiraService = this.services.get<any>('jiraService');
+            if (!jiraService) {
+              return this.createErrorResponse("JIRA service not available. Use { useStatic: true } for offline data.");
+            }
+
+            let allBoards: any[] = [];
+
+            // Fetch all boards from API
+            let startAt = 0;
+            const maxResults = 50;
+            let hasMore = true;
+
+            while (hasMore) {
+              try {
+                const response = await jiraService.makeRequest(
+                  `/rest/agile/1.0/board?startAt=${startAt}&maxResults=${maxResults}`,
+                  'GET'
+                );
+                
+                if (response.values && Array.isArray(response.values)) {
+                  allBoards = allBoards.concat(response.values);
+                  hasMore = response.values.length === maxResults;
+                  startAt += maxResults;
+                } else {
+                  hasMore = false;
+                }
+              } catch (error: any) {
+                console.error(`Error fetching boards at startAt ${startAt}:`, error.message);
+                // Fall back to static data if API fails
+                if (startAt === 0) {
+                  return this.handleStaticRequest(args, `API failed: ${error.message}. Using static data.`);
+                }
+                hasMore = false;
+              }
+            }
+
+            // Skip project enrichment by default to avoid timeouts
+            if (args.includeProjects === true) {
+              for (const board of allBoards) {
+                try {
+                  const boardConfig = await jiraService.makeRequest(
+                    `/rest/agile/1.0/board/${board.id}/configuration`,
+                    'GET'
+                  );
+                  
+                  if (boardConfig.location && boardConfig.location.project) {
+                    board.project = boardConfig.location.project;
+                  }
+                } catch (error) {
+                  // Silently continue if we can't get project info
+                  board.project = null;
+                }
+              }
+            }
+
+            // Update static mappings if requested
+            if (args.updateStatic === true && allBoards.length > 0) {
+              this.updateStaticMappings(allBoards);
+            }
+
+            // Apply filters
+            if (args.filterByType) {
+              allBoards = allBoards.filter(board => 
+                board.type && board.type.toLowerCase() === args.filterByType.toLowerCase()
+              );
+            }
+
+            if (args.searchTerm) {
+              const term = args.searchTerm.toLowerCase();
+              allBoards = allBoards.filter(board => 
+                board.name.toLowerCase().includes(term) ||
+                (board.project && board.project.name && board.project.name.toLowerCase().includes(term)) ||
+                (board.project && board.project.key && board.project.key.toLowerCase().includes(term))
+              );
+            }
+
+            return this.formatResponse(allBoards, args.format || 'detailed', Date.now() - startTime);
+          }
+
+          // Fallback to static
+          return this.handleStaticRequest(args);
+
+        } catch (error: any) {
+          return this.createErrorResponse(`Failed to list boards: ${error.message}`);
+        }
+      }
+
+      private handleStaticRequest(args: any, fallbackMessage?: string): MCPToolResult {
+        try {
+          // Limit data processing to avoid timeouts
+          let staticBoards = Object.values(BOARD_NAME_MAPPINGS);
+          
+          // If search term provided, filter first to reduce data size
+          if (args.searchTerm) {
+            const term = args.searchTerm.toLowerCase();
+            staticBoards = staticBoards.filter(board => 
+              board.name.toLowerCase().includes(term)
+            ).slice(0, 100); // Limit to 100 results
+          } else {
+            // Limit to first 50 boards if no search term
+            staticBoards = staticBoards.slice(0, 50);
+          }
+          
+          // Apply type filter
+          if (args.filterByType) {
+            staticBoards = staticBoards.filter(board => 
+              board.type.toLowerCase() === args.filterByType.toLowerCase()
+            );
+          }
+
+          const message = fallbackMessage ? `⚠️ ${fallbackMessage}\n\n` : '';
+          return this.formatStaticResponse(staticBoards, args.format || 'summary', message);
+        } catch (error: any) {
+          return this.createErrorResponse(`Failed to process static data: ${error.message}`);
+        }
+      }
+
+      private updateStaticMappings(boards: any[]): void {
+        boards.forEach(board => {
+          if (board.project && board.project.key) {
+            const mapping: BoardMapping = {
+              id: board.id,
+              name: board.name,
+              type: board.type || 'unknown',
+              projectKey: board.project.key,
+              projectName: board.project.name
+            };
+            BoardLookup.updateBoardMapping(board.project.key, mapping);
+          }
+        });
+      }
+
+      private formatResponse(boards: any[], format: string, executionTime: number): MCPToolResult {
+        if (format === 'javascript') {
+          const jsObject = this.generateJavaScriptObject(boards);
+          return this.createSuccessResponse(
+            `🚀 **JavaScript Board Mappings Object**\n\n` +
+            `\`\`\`javascript\n${jsObject}\n\`\`\`\n\n` +
+            `📋 **Usage:**\n` +
+            `  • Copy this object to your MCPToolFactory.ts\n` +
+            `  • Import and use BoardLookup functions\n` +
+            `  • Total Boards: ${boards.length}\n\n` +
+            `⚡ **Fetch Time:** ${executionTime}ms`
+          );
+        }
+
+        if (format === 'summary') {
+          const typeStats = boards.reduce((stats: any, board) => {
+            const type = board.type || 'unknown';
+            stats[type] = (stats[type] || 0) + 1;
+            return stats;
+          }, {});
+
+          return this.createSuccessResponse(
+            `📊 **JIRA Boards Summary**\n\n` +
+            `🎯 **Total Boards:** ${boards.length}\n\n` +
+            `📋 **By Type:**\n` +
+            Object.entries(typeStats).map(([type, count]) => 
+              `  • ${type}: ${count} boards`
+            ).join('\n') + '\n\n' +
+            `⚡ **Fetch Time:** ${executionTime}ms`
+          );
+        }
+
+        if (format === 'mapping') {
+          const boardMapping: { [key: string]: number } = {};
+          const projectMapping: { [key: string]: number[] } = {};
+
+          boards.forEach(board => {
+            boardMapping[board.name] = board.id;
+            
+            if (board.project && board.project.key) {
+              const projectKey = board.project.key;
+              if (!projectMapping[projectKey]) {
+                projectMapping[projectKey] = [];
+              }
+              projectMapping[projectKey].push(board.id);
+            }
+          });
+
+          return this.createSuccessResponse(
+            `🗺️ **JIRA Board Mapping**\n\n` +
+            `📋 **Board Name → Board ID:**\n` +
+            `\`\`\`json\n${JSON.stringify(boardMapping, null, 2)}\n\`\`\`\n\n` +
+            `🏢 **Project Key → Board IDs:**\n` +
+            `\`\`\`json\n${JSON.stringify(projectMapping, null, 2)}\n\`\`\`\n\n` +
+            `⚡ **Fetch Time:** ${executionTime}ms`
+          );
+        }
+
+        // Default detailed format
+        const boardsList = boards.map(board => {
+          const projectInfo = board.project ? 
+            ` (Project: ${board.project.name} - ${board.project.key})` : 
+            board.projectName ? ` (Project: ${board.projectName} - ${board.projectKey})` :
+            ' (No project info)';
+
+          return `  📋 **${board.name}** (ID: ${board.id})\n` +
+                 `     🏷️ Type: ${board.type || 'Unknown'}\n` +
+                 `     🏢 ${projectInfo}`;
+        }).join('\n\n');
+
+        return this.createSuccessResponse(
+          `📋 **All JIRA Boards (${boards.length} total)**\n\n` +
+          boardsList + '\n\n' +
+          `🎯 **Quick Options:**\n` +
+          `  • Format: summary | detailed | mapping | javascript\n` +
+          `  • Static: { useStatic: true } for offline use\n` +
+          `  • Update: { updateStatic: true } to refresh cache\n\n` +
+          `⚡ **Fetch Time:** ${executionTime}ms`
+        );
+      }
+
+      private formatStaticResponse(boards: BoardMapping[], format: string, prefixMessage: string = ''): MCPToolResult {
+        if (format === 'javascript') {
+          return this.createSuccessResponse(
+            prefixMessage +
+            `🚀 **Static JavaScript Board Mappings**\n\n` +
+            `\`\`\`javascript\n${BoardLookup.exportMappings()}\n\`\`\`\n\n` +
+            `📋 **Available Boards:** ${boards.length}\n` +
+            `📊 **Projects:** ${BoardLookup.getAllProjectKeys().join(', ')}`
+          );
+        }
+
+        const boardsList = boards.map(board => {
+          const projectInfo = board.projectName ? 
+            ` (Project: ${board.projectName} - ${board.projectKey})` : 
+            ' (No project info)';
+
+          return `  📋 **${board.name}** (ID: ${board.id})\n` +
+                 `     🏷️ Type: ${board.type}\n` +
+                 `     🏢 ${projectInfo}`;
+        }).join('\n\n');
+
+        return this.createSuccessResponse(
+          prefixMessage +
+          `📋 **Static JIRA Boards (${boards.length} total)**\n\n` +
+          boardsList + '\n\n' +
+          `💡 **Note:** This is cached data. Use { updateStatic: true } to refresh from API.`
+        );
+      }
+
+      private generateJavaScriptObject(boards: any[]): string {
+        const mappings: { [key: string]: BoardMapping } = {};
+        
+        boards.forEach(board => {
+          if (board.project && board.project.key) {
+            mappings[board.project.key] = {
+              id: board.id,
+              name: board.name,
+              type: board.type || 'unknown',
+              projectKey: board.project.key,
+              projectName: board.project.name
+            };
+          }
+        });
+
+        return JSON.stringify(mappings, null, 2);
       }
     })(this.services);
   }

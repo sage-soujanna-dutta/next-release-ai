@@ -13,6 +13,7 @@ import { TeamsIntegrationTool } from "../tools/TeamsIntegrationTool.js";
 import { StoryPointsAnalysisTool } from "../tools/StoryPointsAnalysisTool.js";
 import { VelocityAnalysisTool } from "../tools/VelocityAnalysisTool.js";
 import { ComprehensiveWorkflowTool } from "../tools/ComprehensiveWorkflowTool.js";
+import { BoardLookup, STATIC_BOARD_MAPPINGS } from "../utils/BoardMappings.js";
 
 // Import tool adapters that will be created
 import { ReleaseToolsFactory } from "./factories/ReleaseToolsFactory.js";
@@ -133,6 +134,36 @@ export class MCPToolFactory {
 
   getToolInstance<T>(instanceName: string): T {
     return this.toolInstances.get(instanceName) as T;
+  }
+
+  // Static Board Mappings Utilities
+  
+  /**
+   * Get board ID by project key using static mappings
+   */
+  getBoardIdByProject(projectKey: string): number | null {
+    return BoardLookup.getBoardIdByProject(projectKey);
+  }
+  
+  /**
+   * Get all available project keys from static mappings
+   */
+  getAvailableProjects(): string[] {
+    return BoardLookup.getAllProjectKeys();
+  }
+  
+  /**
+   * Search boards by name using static mappings
+   */
+  searchBoards(searchTerm: string) {
+    return BoardLookup.searchBoardsByName(searchTerm);
+  }
+  
+  /**
+   * Get current static board mappings
+   */
+  getStaticBoardMappings() {
+    return STATIC_BOARD_MAPPINGS;
   }
 }
 

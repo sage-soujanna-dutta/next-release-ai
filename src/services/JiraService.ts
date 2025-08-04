@@ -54,6 +54,32 @@ export class JiraService {
     }
   }
 
+  /**
+   * Generic method to make JIRA API requests
+   */
+  async makeRequest(endpoint: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', data?: any): Promise<any> {
+    try {
+      const url = `https://${this.domain}${endpoint}`;
+      const response = await axios({
+        url,
+        method,
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        data
+      });
+
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
+        throw new Error(`JIRA API Error: ${error.response.status} - ${error.response.data?.errorMessages?.join(', ') || error.response.statusText}`);
+      }
+      throw new Error(`JIRA Request Failed: ${error.message}`);
+    }
+  }
+
   async fetchIssues(sprintNumber: string): Promise<JiraIssue[]> {
     try {
       // First, get the sprint by number
