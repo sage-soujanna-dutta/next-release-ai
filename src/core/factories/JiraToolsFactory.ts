@@ -13,6 +13,7 @@ export class JiraToolsFactory {
       description: "Tools for JIRA issue management, fetching, and analysis",
       tools: [
         this.createFetchJiraIssuesTool(),
+        this.createFindBoardByProjectTool(),
         this.createBulkJiraUpdateTool(),
         this.createJiraQueryBuilderTool(),
         this.createAdvancedJiraFetchTool(),
@@ -523,5 +524,226 @@ export class JiraToolsFactory {
         }
       }
     })(this.services, this.toolInstances);
+  }
+
+  private createFindBoardByProjectTool(): MCPTool {
+    return new (class extends BaseMCPTool {
+      name = "find_board_by_project";
+      description = "Find JIRA board ID based on project name or key";
+      inputSchema = {
+        type: "object",
+        properties: {
+          projectName: {
+            type: "string",
+            description: "Project name to search for (e.g., 'Network Directory Service', 'SCNT')"
+          },
+          projectKey: {
+            type: "string",
+            description: "Project key to search for (e.g., 'NDS', 'SCNT')"
+          },
+          boardId: {
+            type: "number",
+            description: "Direct board ID to verify (e.g., 5465)"
+          },
+          exactMatch: {
+            type: "boolean",
+            description: "Whether to perform exact match or partial match (default: false)"
+          },
+          includeInactive: {
+            type: "boolean",
+            description: "Include inactive/archived boards (default: false)"
+          }
+        }
+      };
+
+      constructor(private services: ServiceRegistry) {
+        super();
+      }
+
+      async execute(args: any): Promise<MCPToolResult> {
+        const startTime = Date.now();
+        try {
+          if (!args.projectName && !args.projectKey && !args.boardId) {
+            return this.createErrorResponse("Either projectName, projectKey, or boardId must be provided");
+          }
+
+          const domain = process.env.JIRA_DOMAIN;
+          const token = process.env.JIRA_TOKEN;
+
+          if (!domain || !token) {
+            return this.createErrorResponse("Missing JIRA environment variables (JIRA_DOMAIN, JIRA_TOKEN)");
+          }
+
+          // Import axios dynamically
+          const axios = await import('axios');
+
+          let matchingBoards: any[] = [];
+
+          // If boardId is provided, try direct access first
+          if (args.boardId) {
+            console.log(`🎯 Checking specific board ID: ${args.boardId}...`);
+            try {
+              const directBoardRes = await axios.default.get(
+                `https://${domain}/rest/agile/1.0/board/${args.boardId}`,
+                { 
+                  headers: { 
+                    Authorization: `Bearer ${token}`,
+                    Accept: "application/json",
+                  } 
+                }
+              );
+
+              const board = directBoardRes.data;
+              console.log(`✅ Found board ${args.boardId}: "${board.name}"`);
+              
+              // Try to get project information for this board
+              try {
+                const projectRes = await axios.default.get(
+                  `https://${domain}/rest/agile/1.0/board/${args.boardId}/project`,
+                  { 
+                    headers: { 
+                      Authorization: `Bearer ${token}`,
+                      Accept: "application/json",
+                    } 
+                  }
+                );
+                board.projects = projectRes.data.values;
+              } catch (projectError) {
+                console.log("⚠️ Could not fetch project info for this board");
+                board.projects = [];
+              }
+
+              matchingBoards = [board];
+            } catch (directError: any) {
+              console.log(`❌ Board ${args.boardId} not accessible: ${directError.message}`);
+            }
+          }
+
+          // If no direct board found, or if searching by name/key, search all boards
+          if (matchingBoards.length === 0 && (args.projectName || args.projectKey)) {
+            console.log(`🔍 Searching for boards by project: ${args.projectName || args.projectKey}...`);
+
+            // Search through paginated results
+            let startAt = 0;
+            const maxResults = 50;
+            const maxBoards = 500; // Limit total search to avoid timeout
+
+            while (startAt < maxBoards) {
+              const boardsRes = await axios.default.get(
+                `https://${domain}/rest/agile/1.0/board?startAt=${startAt}&maxResults=${maxResults}`,
+                { 
+                  headers: { 
+                    Authorization: `Bearer ${token}`,
+                    Accept: "application/json",
+                  } 
+                }
+              );
+
+              const boards = boardsRes.data.values;
+              if (boards.length === 0) break;
+
+              console.log(`📋 Searching boards ${startAt + 1} to ${startAt + boards.length}...`);
+
+              // Search by board name first
+              const nameMatches = boards.filter((board: any) => {
+                const boardName = board.name?.toLowerCase();
+                const searchName = args.projectName?.toLowerCase();
+                const searchKey = args.projectKey?.toLowerCase();
+
+                if (!boardName) return false;
+
+                if (args.exactMatch) {
+                  return (searchName && boardName === searchName) ||
+                         (searchKey && boardName.includes(searchKey?.toLowerCase()));
+                } else {
+                  return (searchName && boardName.includes(searchName)) ||
+                         (searchKey && boardName.includes(searchKey?.toLowerCase()));
+                }
+              });
+
+              matchingBoards.push(...nameMatches);
+
+              // If we found matches, we can stop (unless we want all matches)
+              if (matchingBoards.length > 0 && args.exactMatch) {
+                break;
+              }
+
+              startAt += maxResults;
+              if (boards.length < maxResults) break; // End of results
+            }
+
+            console.log(`📊 Found ${matchingBoards.length} matching boards by name`);
+          }
+
+          if (matchingBoards.length === 0) {
+            return this.createErrorResponse(
+              `No boards found for project "${args.projectName || args.projectKey}". ` +
+              `Try using partial matching (exactMatch: false) or check the project name.`
+            );
+          }
+
+          // Sort by relevance (exact matches first, then by name)
+          matchingBoards.sort((a: any, b: any) => {
+            const aName = a.name?.toLowerCase() || '';
+            const bName = b.name?.toLowerCase() || '';
+            const searchTerm = (args.projectName || args.projectKey)?.toLowerCase();
+            
+            // Prioritize exact name matches
+            if (aName.includes(searchTerm) && !bName.includes(searchTerm)) return -1;
+            if (bName.includes(searchTerm) && !aName.includes(searchTerm)) return 1;
+            
+            return aName.localeCompare(bName);
+          });
+
+          // Generate detailed results
+          const boardDetails = matchingBoards.map((board: any) => {
+            // Handle both name-matched boards and project-matched boards
+            const projectInfo = board.projects && board.projects[0] ? board.projects[0] : null;
+            
+            return {
+              id: board.id,
+              name: board.name,
+              type: board.type,
+              projectName: projectInfo?.name || 'Unknown',
+              projectKey: projectInfo?.key || 'Unknown',
+              projectId: projectInfo?.id || 'Unknown',
+              url: `https://${domain}/secure/RapidBoard.jspa?rapidView=${board.id}`,
+              matchType: board.projects ? 'project' : 'name'
+            };
+          });
+
+          const primaryBoard = boardDetails[0];
+
+          this.logExecution({ toolName: this.name, startTime, args });
+
+          return this.createSuccessResponse(
+            `🎯 Found ${matchingBoards.length} Board(s) for Project "${args.projectName || args.projectKey}"!\n\n` +
+            `🏆 **Primary Board (Recommended):**\n` +
+            `  📋 Board ID: ${primaryBoard.id}\n` +
+            `  📝 Board Name: ${primaryBoard.name}\n` +
+            `  🏷️ Board Type: ${primaryBoard.type}\n` +
+            `  🏢 Project: ${primaryBoard.projectName} (${primaryBoard.projectKey})\n` +
+            `  🔗 URL: ${primaryBoard.url}\n\n` +
+            (boardDetails.length > 1 ? 
+              `📋 **All Matching Boards:**\n` +
+              boardDetails.map((board: any) => 
+                `  • ${board.id}: ${board.name} (${board.type}) - ${board.projectName}`
+              ).join('\n') + '\n\n'
+              : '') +
+            `🎯 **Quick Usage:**\n` +
+            `  Use Board ID ${primaryBoard.id} with the board-based release notes tool:\n` +
+            `  \`generate_board_based_release_notes({ boardId: ${primaryBoard.id}, sprintNumber: "YOUR_SPRINT" })\`\n\n` +
+            `📊 **Search Results:**\n` +
+            `  • Total Boards Found: ${boardDetails.length}\n` +
+            `  • Search Term: ${args.projectName || args.projectKey}\n` +
+            `  • Match Type: ${args.exactMatch ? 'Exact' : 'Partial'}\n` +
+            `  • Primary Project: ${primaryBoard.projectName} (${primaryBoard.projectKey})\n` +
+            `⚡ **Search Time:** ${Date.now() - startTime}ms`
+          );
+        } catch (error: any) {
+          return this.createErrorResponse(`Failed to find boards: ${error.message}`);
+        }
+      }
+    })(this.services);
   }
 }

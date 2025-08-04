@@ -575,11 +575,11 @@ class SprintReportHTMLGenerator {
           </tr>
           <tr>
             <td><strong>Issues Identified</strong></td>
-            <td>${risk.issues.length} items requiring attention</td>
+            <td>${risk.issues?.length || 0} items requiring attention</td>
           </tr>
           <tr>
             <td><strong>Mitigation Actions</strong></td>
-            <td>${risk.mitigation.length} strategies implemented</td>
+            <td>${risk.mitigation?.length || 0} strategies implemented</td>
           </tr>
         </tbody>
       </table>
@@ -593,7 +593,7 @@ class SprintReportHTMLGenerator {
           </tr>
         </thead>
         <tbody>
-          ${risk.issues.map((issue, index) => `
+          ${(risk.issues || []).map((issue, index) => `
           <tr>
             <td>${index + 1}</td>
             <td>${issue}</td>
@@ -611,7 +611,7 @@ class SprintReportHTMLGenerator {
           </tr>
         </thead>
         <tbody>
-          ${risk.mitigation.map((strategy, index) => `
+          ${(risk.mitigation || []).map((strategy, index) => `
           <tr>
             <td>${index + 1}</td>
             <td>${strategy}</td>
@@ -637,7 +637,7 @@ class SprintReportHTMLGenerator {
           </tr>
         </thead>
         <tbody>
-          ${data.actionItems.map(item => {
+          ${(data.actionItems || []).map(item => {
             const priorityIcon = item.priority === 'critical' ? '🔴' : 
                                 item.priority === 'high' ? '🟠' : 
                                 item.priority === 'medium' ? '🟡' : '🟢';
@@ -662,7 +662,7 @@ class SprintReportHTMLGenerator {
     <div class="section">
       <h2>🎉 Key Achievements</h2>
       <ul style="list-style: none; padding: 0;">
-        ${data.achievements.map(achievement => `
+        ${(data.achievements || []).map(achievement => `
         <li style="background: #f8f9fa; margin: 10px 0; padding: 15px; border-left: 4px solid #28a745; border-radius: 4px;">
           ✅ ${achievement}
         </li>

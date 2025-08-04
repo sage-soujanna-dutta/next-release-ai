@@ -54,7 +54,7 @@ class DualModeMCPServer {
       const { name: toolName, arguments: args } = request.params;
 
       try {
-        // Add logging for debugging
+        // Add logging for debugging (to stderr)
         console.error(`🔧 Executing tool: ${toolName} with args:`, JSON.stringify(args));
         
         const tool = this.toolFactory.getTool(toolName);
@@ -76,7 +76,7 @@ class DualModeMCPServer {
 
         console.error(`✅ Found tool: ${toolName}, executing...`);
         
-        // Execute with timeout protection
+        // Execute with timeout protection and better error handling
         const result = await Promise.race([
           tool.execute(args || {}),
           new Promise((_, reject) => 
@@ -221,6 +221,14 @@ class DualModeMCPServer {
 
   async startStdio(): Promise<void> {
     try {
+      // Redirect console.log to stderr for STDIO mode to avoid interfering with JSON-RPC
+      const originalConsoleLog = console.log;
+      
+      // Only redirect in STDIO mode, not in tests
+      if (process.env.NODE_ENV !== 'test') {
+        console.log = (...args) => console.error('[LOG]', ...args);
+      }
+
       const transport = new StdioServerTransport();
       await this.server.connect(transport);
       

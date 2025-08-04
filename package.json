@@ -7,7 +7,7 @@
     "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts",
     "mcp-server": "tsx src/dual-server.ts",
-    "mcp-server:stdio": "tsx src/dual-server.ts stdio",
+    "mcp-server:stdio": "tsx src/dual-server.ts",
     "mcp-server:http": "tsx src/dual-server.ts http",
     "server": "tsx src/server.ts",
     "server:prod": "node dist/server.js",

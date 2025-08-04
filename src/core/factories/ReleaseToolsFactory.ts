@@ -13,6 +13,7 @@ export class ReleaseToolsFactory {
       description: "Tools for generating release notes, managing workflows, and publishing content",
       tools: [
         this.createGenerateReleaseNotesTool(),
+        this.createBoardBasedReleaseNotesTool(), // New tool
         this.createCreateReleaseWorkflowTool(),
         this.createComprehensiveSprintReportTool(),
         this.createPreviewReleaseNotesTool(),
@@ -77,6 +78,403 @@ export class ReleaseToolsFactory {
         } catch (error: any) {
           return this.createErrorResponse(`Failed to generate release notes: ${error.message}`);
         }
+      }
+    })(this.services);
+  }
+
+  private createBoardBasedReleaseNotesTool(): MCPTool {
+    return new (class extends BaseMCPTool {
+      name = "generate_board_based_release_notes";
+      description = "Generate release notes based on JIRA board ID and sprint number - supports any project";
+      inputSchema = {
+        type: "object",
+        properties: {
+          boardId: {
+            type: "number",
+            description: "JIRA board ID (e.g., 5465 for NDS board)"
+          },
+          sprintNumber: {
+            type: "string", 
+            description: "Sprint number or name to search for (e.g., 'FY25-21', 'SCNT-2025-20')"
+          },
+          format: {
+            type: "string",
+            enum: ["html", "markdown"],
+            description: "Output format (default: markdown)"
+          },
+          outputDirectory: {
+            type: "string",
+            description: "Output directory for generated files (default: './output')"
+          },
+          projectName: {
+            type: "string",
+            description: "Project name for the report (optional, will be detected from board)"
+          },
+          includeTeamsNotification: {
+            type: "boolean",
+            description: "Send notification to Teams channel (default: false)"
+          }
+        },
+        required: ["boardId", "sprintNumber"]
+      };
+
+      constructor(private services: ServiceRegistry) {
+        super();
+      }
+
+      async execute(args: any): Promise<MCPToolResult> {
+        const startTime = Date.now();
+        try {
+          this.validateRequiredArgs(args, ["boardId", "sprintNumber"]);
+
+          const domain = process.env.JIRA_DOMAIN;
+          const token = process.env.JIRA_TOKEN;
+
+          if (!domain || !token) {
+            return this.createErrorResponse("Missing JIRA environment variables (JIRA_DOMAIN, JIRA_TOKEN)");
+          }
+
+          console.log(`🔍 Fetching sprint data for ${args.sprintNumber} from board ${args.boardId}...`);
+
+          // Import required modules dynamically
+          const axios = await import('axios');
+          const fs = await import('fs');
+          const path = await import('path');
+
+          // Get all sprints for the board
+          const sprintsRes = await axios.default.get(
+            `https://${domain}/rest/agile/1.0/board/${args.boardId}/sprint?maxResults=100&state=active,closed`,
+            { 
+              headers: { 
+                Authorization: `Bearer ${token}`,
+                Accept: "application/json",
+              } 
+            }
+          );
+
+          console.log(`📋 Found ${sprintsRes.data.values.length} sprints on board ${args.boardId}`);
+
+          // Find the target sprint
+          const targetSprint = sprintsRes.data.values.find((sprint: any) => 
+            sprint.name.includes(args.sprintNumber) || 
+            sprint.name.toLowerCase().includes(args.sprintNumber.toLowerCase())
+          );
+
+          if (!targetSprint) {
+            const availableSprints = sprintsRes.data.values.map((s: any) => s.name).join(', ');
+            return this.createErrorResponse(
+              `Sprint '${args.sprintNumber}' not found on board ${args.boardId}.\n` +
+              `Available sprints: ${availableSprints}`
+            );
+          }
+
+          console.log(`✅ Found Sprint: ${targetSprint.name} (ID: ${targetSprint.id}, State: ${targetSprint.state})`);
+
+          // Get issues for this sprint
+          const issuesRes = await axios.default.get(
+            `https://${domain}/rest/agile/1.0/sprint/${targetSprint.id}/issue?maxResults=200&expand=names`,
+            { 
+              headers: { 
+                Authorization: `Bearer ${token}`,
+                Accept: "application/json",
+              } 
+            }
+          );
+
+          const issues = issuesRes.data.issues;
+          console.log(`📊 Found ${issues.length} issues in sprint ${targetSprint.name}`);
+
+          // Get board information for project details
+          const boardRes = await axios.default.get(
+            `https://${domain}/rest/agile/1.0/board/${args.boardId}`,
+            { 
+              headers: { 
+                Authorization: `Bearer ${token}`,
+                Accept: "application/json",
+              } 
+            }
+          );
+
+          const projectName = args.projectName || boardRes.data.name || `Board-${args.boardId}`;
+
+          // Process the data for report generation
+          const sprintData = this.processSprintData(targetSprint, issues, projectName);
+
+          // Generate the report
+          const format = args.format || 'markdown';
+          const outputDir = args.outputDirectory || './output';
+          
+          // Ensure output directory exists
+          if (!fs.existsSync(outputDir)) {
+            fs.mkdirSync(outputDir, { recursive: true });
+          }
+
+          const timestamp = new Date().toISOString()
+            .replace(/[:.]/g, '-')
+            .replace('T', '-')
+            .substring(0, 19);
+          
+          const filename = `${targetSprint.name.replace(/[^a-zA-Z0-9-]/g, '-')}-sprint-report-${timestamp}.${format}`;
+          const filePath = path.join(outputDir, filename);
+
+          let content: string;
+          if (format === 'markdown') {
+            content = this.generateMarkdownReport(sprintData);
+          } else {
+            content = this.generateHTMLReport(sprintData);
+          }
+
+          fs.writeFileSync(filePath, content, 'utf8');
+          console.log(`✅ Report generated: ${filePath}`);
+
+          // Send Teams notification if requested
+          let teamsResult = null;
+          if (args.includeTeamsNotification) {
+            try {
+              const teamsService = this.services.get<any>('teamsService');
+              const teamsMessage = this.generateTeamsMessage(sprintData, filename);
+              teamsResult = await teamsService.sendNotification({
+                message: teamsMessage,
+                title: `📊 Sprint Report Generated: ${targetSprint.name}`,
+                isImportant: false,
+                includeMetadata: true
+              });
+            } catch (teamsError: any) {
+              console.warn(`⚠️ Teams notification failed: ${teamsError.message}`);
+            }
+          }
+
+          this.logExecution({ toolName: this.name, startTime, args });
+
+          return this.createSuccessResponse(
+            `🎉 Board-Based Release Notes Generated Successfully!\n\n` +
+            `📊 **Sprint:** ${targetSprint.name}\n` +
+            `📋 **Board ID:** ${args.boardId}\n` +
+            `🏢 **Project:** ${projectName}\n` +
+            `📄 **Format:** ${format.toUpperCase()}\n` +
+            `📁 **File:** ${filename}\n` +
+            `📂 **Path:** ${filePath}\n\n` +
+            `📈 **Sprint Statistics:**\n` +
+            `  • Total Issues: ${issues.length}\n` +
+            `  • Completed: ${sprintData.stats.completed}\n` +
+            `  • In Progress: ${sprintData.stats.inProgress}\n` +
+            `  • To Do: ${sprintData.stats.todo}\n` +
+            `  • Story Points: ${sprintData.stats.totalStoryPoints}\n` +
+            `  • Completion Rate: ${sprintData.stats.completionRate}%\n\n` +
+            `🔄 **Sprint Status:** ${targetSprint.state}\n` +
+            `📅 **Sprint Dates:** ${targetSprint.startDate ? new Date(targetSprint.startDate).toLocaleDateString() : 'N/A'} - ${targetSprint.endDate ? new Date(targetSprint.endDate).toLocaleDateString() : 'N/A'}\n` +
+            `💬 **Teams Notification:** ${args.includeTeamsNotification ? (teamsResult ? 'Sent ✅' : 'Failed ❌') : 'Skipped'}\n` +
+            `⚡ **Generation Time:** ${Date.now() - startTime}ms\n` +
+            `🕐 **Generated:** ${new Date().toLocaleString()}`
+          );
+        } catch (error: any) {
+          return this.createErrorResponse(`Failed to generate board-based release notes: ${error.message}`);
+        }
+      }
+
+      private processSprintData(sprint: any, issues: any[], projectName: string) {
+        const statusCounts = { completed: 0, inProgress: 0, todo: 0 };
+        const issueTypes: Record<string, number> = {};
+        const contributors: Record<string, number> = {};
+        let totalStoryPoints = 0;
+
+        issues.forEach(issue => {
+          const status = issue.fields.status.name;
+          const type = issue.fields.issuetype.name;
+          const assignee = issue.fields.assignee?.displayName || 'Unassigned';
+
+          // Count by status
+          if (status === 'Done' || status === 'Completed' || status === 'Closed') {
+            statusCounts.completed++;
+          } else if (status === 'In Progress' || status === 'In Review') {
+            statusCounts.inProgress++;
+          } else {
+            statusCounts.todo++;
+          }
+
+          // Count by type
+          issueTypes[type] = (issueTypes[type] || 0) + 1;
+
+          // Count by contributor
+          contributors[assignee] = (contributors[assignee] || 0) + 1;
+
+          // Sum story points (check multiple possible fields)
+          const storyPoints = issue.fields.customfield_10004 || 
+                             issue.fields.customfield_10002 || 
+                             issue.fields.customfield_10003 || 
+                             issue.fields.customfield_10005 || 0;
+          totalStoryPoints += storyPoints;
+        });
+
+        const completionRate = issues.length > 0 ? Math.round((statusCounts.completed / issues.length) * 100) : 0;
+
+        return {
+          sprint: {
+            name: sprint.name,
+            id: sprint.id,
+            state: sprint.state,
+            startDate: sprint.startDate,
+            endDate: sprint.endDate,
+            completeDate: sprint.completeDate,
+            goal: sprint.goal
+          },
+          project: {
+            name: projectName
+          },
+          issues,
+          stats: {
+            ...statusCounts,
+            totalStoryPoints,
+            completionRate,
+            total: issues.length
+          },
+          breakdown: {
+            byType: issueTypes,
+            byContributor: contributors
+          }
+        };
+      }
+
+      private generateMarkdownReport(data: any): string {
+        const sprint = data.sprint;
+        const stats = data.stats;
+        const breakdown = data.breakdown;
+
+        return `# Sprint Report: ${sprint.name}
+
+## 📋 Sprint Overview
+
+**Project:** ${data.project.name}  
+**Sprint ID:** ${sprint.id}  
+**Status:** ${sprint.state}  
+**Period:** ${sprint.startDate ? new Date(sprint.startDate).toLocaleDateString() : 'N/A'} - ${sprint.endDate ? new Date(sprint.endDate).toLocaleDateString() : 'N/A'}  
+${sprint.goal ? `**Goal:** ${sprint.goal}` : ''}
+
+## 📊 Key Metrics
+
+| Metric | Value |
+|--------|-------|
+| **Total Issues** | ${stats.total} |
+| **Completed** | ${stats.completed} |
+| **In Progress** | ${stats.inProgress} |
+| **To Do** | ${stats.todo} |
+| **Story Points** | ${stats.totalStoryPoints} |
+| **Completion Rate** | ${stats.completionRate}% |
+
+## 🎯 Progress Overview
+
+\`\`\`
+Completion Progress: ${stats.completionRate}%
+${'█'.repeat(Math.floor(stats.completionRate / 5))}${'░'.repeat(20 - Math.floor(stats.completionRate / 5))}
+\`\`\`
+
+## 📈 Issue Breakdown
+
+### By Type
+${Object.entries(breakdown.byType)
+  .sort(([,a], [,b]) => (b as number) - (a as number))
+  .map(([type, count]) => `- **${type}:** ${count}`)
+  .join('\n')}
+
+### By Status
+- **✅ Completed:** ${stats.completed}
+- **🔄 In Progress:** ${stats.inProgress}
+- **📋 To Do:** ${stats.todo}
+
+## 👥 Contributors
+
+${Object.entries(breakdown.byContributor)
+  .sort(([,a], [,b]) => (b as number) - (a as number))
+  .slice(0, 10)
+  .map(([contributor, count]) => `- **${contributor}:** ${count} issue${count !== 1 ? 's' : ''}`)
+  .join('\n')}
+
+## 📋 Issue Details
+
+${data.issues.map((issue: any) => {
+  const status = issue.fields.status.name;
+  const statusIcon = status === 'Done' || status === 'Completed' || status === 'Closed' ? '✅' : 
+                    status === 'In Progress' || status === 'In Review' ? '🔄' : '📋';
+  const storyPoints = issue.fields.customfield_10004 || 
+                     issue.fields.customfield_10002 || 
+                     issue.fields.customfield_10003 || 
+                     issue.fields.customfield_10005 || '';
+  
+  return `### ${statusIcon} ${issue.key}: ${issue.fields.summary}
+
+**Type:** ${issue.fields.issuetype.name}  
+**Status:** ${status}  
+**Assignee:** ${issue.fields.assignee?.displayName || 'Unassigned'}  
+${storyPoints ? `**Story Points:** ${storyPoints}` : ''}  
+${issue.fields.priority ? `**Priority:** ${issue.fields.priority.name}` : ''}
+
+${issue.fields.description ? issue.fields.description.substring(0, 200) + (issue.fields.description.length > 200 ? '...' : '') : ''}
+
+---`;
+}).join('\n\n')}
+
+## 📝 Report Information
+
+**Generated:** ${new Date().toLocaleString()}  
+**Source:** JIRA Board API  
+**Format:** Markdown  
+
+---
+
+*This report was automatically generated from JIRA data.*`;
+      }
+
+      private generateHTMLReport(data: any): string {
+        // Implementation for HTML format (simplified for now)
+        return `<!DOCTYPE html>
+<html>
+<head>
+    <title>Sprint Report: ${data.sprint.name}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .metric { background: #f5f5f5; padding: 10px; margin: 5px 0; border-radius: 5px; }
+        .issue { border-left: 3px solid #007cba; padding: 10px; margin: 10px 0; }
+        .completed { border-left-color: #28a745; }
+        .in-progress { border-left-color: #ffc107; }
+        .todo { border-left-color: #6c757d; }
+    </style>
+</head>
+<body>
+    <h1>Sprint Report: ${data.sprint.name}</h1>
+    <div class="metric">
+        <strong>Completion Rate:</strong> ${data.stats.completionRate}%
+    </div>
+    <div class="metric">
+        <strong>Total Issues:</strong> ${data.stats.total}
+    </div>
+    <h2>Issues</h2>
+    ${data.issues.map((issue: any) => {
+      const statusClass = issue.fields.status.name === 'Done' ? 'completed' :
+                         issue.fields.status.name === 'In Progress' ? 'in-progress' : 'todo';
+      return `<div class="issue ${statusClass}">
+        <h3>${issue.key}: ${issue.fields.summary}</h3>
+        <p><strong>Status:</strong> ${issue.fields.status.name}</p>
+        <p><strong>Assignee:</strong> ${issue.fields.assignee?.displayName || 'Unassigned'}</p>
+      </div>`;
+    }).join('')}
+</body>
+</html>`;
+      }
+
+      private generateTeamsMessage(data: any, filename: string): string {
+        return `📊 **Sprint Report Generated**
+
+**Sprint:** ${data.sprint.name}  
+**Project:** ${data.project.name}  
+**Status:** ${data.sprint.state}
+
+📈 **Key Metrics:**
+- Total Issues: ${data.stats.total}
+- Completed: ${data.stats.completed} (${data.stats.completionRate}%)
+- Story Points: ${data.stats.totalStoryPoints}
+
+📁 **File:** ${filename}  
+🕐 **Generated:** ${new Date().toLocaleString()}`;
       }
     })(this.services);
   }
@@ -432,6 +830,13 @@ export class ReleaseToolsFactory {
             throw new Error(`No data found for sprint ${args.sprintNumber}`);
           }
 
+          // Debug: Log the structure of sprint data
+          console.log('📊 Sprint data structure check:');
+          console.log('- priorityData exists:', !!sprintData.priorityData);
+          console.log('- topContributors exists:', !!sprintData.topContributors);
+          console.log('- topContributors length:', sprintData.topContributors?.length || 'undefined');
+          console.log('- workBreakdown exists:', !!sprintData.workBreakdown);
+
           const formats = args.formats || ['both'];
           const outputDir = args.outputDirectory || './reports';
           const config = args.reportConfig || {};
@@ -448,14 +853,20 @@ export class ReleaseToolsFactory {
 
           // Generate HTML report if requested
           if (formats.includes('html') || formats.includes('both')) {
-            const { SprintReportHTMLGenerator } = await import("../../generators/HTMLReportGenerator.js");
-            const htmlGenerator = new SprintReportHTMLGenerator();
-            
-            const htmlPath = path.join(outputDir, `${args.sprintNumber}_report_${timestamp}.html`);
-            const htmlContent = htmlGenerator.generateHTML(sprintData);
-            fs.writeFileSync(htmlPath, htmlContent, 'utf8');
-            generatedFiles.push(htmlPath);
-            console.log(`✅ HTML report generated: ${htmlPath}`);
+            try {
+              const { SprintReportHTMLGenerator } = await import("../../generators/HTMLReportGenerator.js");
+              const htmlGenerator = new SprintReportHTMLGenerator();
+              
+              const htmlPath = path.join(outputDir, `${args.sprintNumber}_report_${timestamp}.html`);
+              console.log('🧪 About to generate HTML...');
+              const htmlContent = htmlGenerator.generateHTML(sprintData);
+              fs.writeFileSync(htmlPath, htmlContent, 'utf8');
+              generatedFiles.push(htmlPath);
+              console.log(`✅ HTML report generated: ${htmlPath}`);
+            } catch (htmlError: any) {
+              console.error('❌ HTML generation error:', htmlError.message);
+              throw new Error(`HTML generation failed: ${htmlError.message}`);
+            }
           }
 
           // Generate PDF report if requested  
@@ -520,4 +931,4 @@ export class ReleaseToolsFactory {
       }
     })(this.services, this.toolInstances);
   }
-}
+} 

@@ -194,14 +194,6 @@ ${this.generateActionItemsSection(analysis.actionItems)}
 
 ${this.generateNextStepsSection(analysis.nextSteps)}
 
-${this.generateStakeholderCommunicationsSection()}
-
-${this.generateDocumentationSection(data)}
-
-${this.generateOutputFilesSection()}
-
-${this.generateRetrospectiveSection(data)}
-
 ${this.generateConclusionSection(data)}
 
 ${this.generateAcknowledgementsSection(analysis.topContributors)}
@@ -705,11 +697,13 @@ ${epics.length > 0 ?
       return `| ${type} ${issue.key} | ${issue.fields.summary} | ${issue.fields.issuetype.name} | ${points} pts | ✅ Delivered |`;
     }).join('\n');
 
-    return `## 📦 Sprint Deliverables
+    return `<details>
+  <summary><h2 style="display:inline-block"> 📦 Sprint Deliverables</h2></summary>
 
 | Issue | Summary | Type | Points | Status |
 |-------|---------|------|--------|--------|
-${deliverableRows}`;
+${deliverableRows}
+</details>`;
   }
 
   private generateSprintComparisonSection(metrics: any): string {
@@ -953,7 +947,7 @@ ${stepRows}`;
 | Sprint Report | sprint-report-${timestamp}.md | Comprehensive sprint analysis | ./output/ |
 | Metrics Export | sprint-metrics-${timestamp}.json | Raw metrics data | ./output/ |
 | Action Items | action-items-${timestamp}.csv | Tracking spreadsheet | ./output/ |
-| Release Notes | release-notes-${timestamp}.md | Customer-facing updates | ./output/ |`;
+| Release Notes | sprint-report-${timestamp}.md | Customer-facing updates | ./output/ |`;
   }
 
   private generateRetrospectiveSection(data: any): string {
