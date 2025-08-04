@@ -1,5 +1,6 @@
 import { MCPTool, MCPToolCategory, BaseMCPTool, MCPToolResult } from "../BaseMCPTool.js";
 import { ServiceRegistry } from "../MCPToolFactory.js";
+import { MarkdownFormatter } from "../../utils/MarkdownFormatter.js";
 
 export class ReleaseToolsFactory {
   constructor(
@@ -336,92 +337,15 @@ export class ReleaseToolsFactory {
       }
 
       private generateMarkdownReport(data: any): string {
-        const sprint = data.sprint;
-        const stats = data.stats;
-        const breakdown = data.breakdown;
-
-        return `# Sprint Report: ${sprint.name}
-
-## 📋 Sprint Overview
-
-**Project:** ${data.project.name}  
-**Sprint ID:** ${sprint.id}  
-**Status:** ${sprint.state}  
-**Period:** ${sprint.startDate ? new Date(sprint.startDate).toLocaleDateString() : 'N/A'} - ${sprint.endDate ? new Date(sprint.endDate).toLocaleDateString() : 'N/A'}  
-${sprint.goal ? `**Goal:** ${sprint.goal}` : ''}
-
-## 📊 Key Metrics
-
-| Metric | Value |
-|--------|-------|
-| **Total Issues** | ${stats.total} |
-| **Completed** | ${stats.completed} |
-| **In Progress** | ${stats.inProgress} |
-| **To Do** | ${stats.todo} |
-| **Story Points** | ${stats.totalStoryPoints} |
-| **Completion Rate** | ${stats.completionRate}% |
-
-## 🎯 Progress Overview
-
-\`\`\`
-Completion Progress: ${stats.completionRate}%
-${'█'.repeat(Math.floor(stats.completionRate / 5))}${'░'.repeat(20 - Math.floor(stats.completionRate / 5))}
-\`\`\`
-
-## 📈 Issue Breakdown
-
-### By Type
-${Object.entries(breakdown.byType)
-  .sort(([,a], [,b]) => (b as number) - (a as number))
-  .map(([type, count]) => `- **${type}:** ${count}`)
-  .join('\n')}
-
-### By Status
-- **✅ Completed:** ${stats.completed}
-- **🔄 In Progress:** ${stats.inProgress}
-- **📋 To Do:** ${stats.todo}
-
-## 👥 Contributors
-
-${Object.entries(breakdown.byContributor)
-  .sort(([,a], [,b]) => (b as number) - (a as number))
-  .slice(0, 10)
-  .map(([contributor, count]) => `- **${contributor}:** ${count} issue${count !== 1 ? 's' : ''}`)
-  .join('\n')}
-
-## 📋 Issue Details
-
-${data.issues.map((issue: any) => {
-  const status = issue.fields.status.name;
-  const statusIcon = status === 'Done' || status === 'Completed' || status === 'Closed' ? '✅' : 
-                    status === 'In Progress' || status === 'In Review' ? '🔄' : '📋';
-  const storyPoints = issue.fields.customfield_10004 || 
-                     issue.fields.customfield_10002 || 
-                     issue.fields.customfield_10003 || 
-                     issue.fields.customfield_10005 || '';
-  
-  return `### ${statusIcon} ${issue.key}: ${issue.fields.summary}
-
-**Type:** ${issue.fields.issuetype.name}  
-**Status:** ${status}  
-**Assignee:** ${issue.fields.assignee?.displayName || 'Unassigned'}  
-${storyPoints ? `**Story Points:** ${storyPoints}` : ''}  
-${issue.fields.priority ? `**Priority:** ${issue.fields.priority.name}` : ''}
-
-${issue.fields.description ? issue.fields.description.substring(0, 200) + (issue.fields.description.length > 200 ? '...' : '') : ''}
-
----`;
-}).join('\n\n')}
-
-## 📝 Report Information
-
-**Generated:** ${new Date().toLocaleString()}  
-**Source:** JIRA Board API  
-**Format:** Markdown  
-
----
-
-*This report was automatically generated from JIRA data.*`;
+        // Use the MarkdownFormatter for consistent markdown output
+        const formatter = new MarkdownFormatter();
+        // Map data to the expected format for MarkdownFormatter
+        // You may need to adapt this mapping based on your data structure
+        const jiraIssues = data.issues || [];
+        const commits = data.commits || [];
+        const sprintName = data.sprint?.name || data.project?.name || "Sprint Report";
+        const sprintDetails = data.sprint || {};
+        return formatter.format(jiraIssues, commits, sprintName, sprintDetails);
       }
 
       private generateHTMLReport(data: any): string {
@@ -931,4 +855,4 @@ ${issue.fields.description ? issue.fields.description.substring(0, 200) + (issue
       }
     })(this.services, this.toolInstances);
   }
-} 
+}
