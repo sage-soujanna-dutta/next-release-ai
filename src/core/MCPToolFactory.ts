@@ -5,6 +5,7 @@ import { TeamsService } from "../services/TeamsService.js";
 import { FileService } from "../services/FileService.js";
 import { ConfluenceService } from "../services/ConfluenceService.js";
 import { EnhancedJiraService } from "../services/EnhancedJiraService.js";
+import { GitHubService } from "../services/GitHubService.js";
 import { HtmlFormatter } from "../utils/HtmlFormatter.js";
 import { SprintReviewTool } from "../tools/SprintReviewTool.js";
 import { ShareableReportTool } from "../tools/ShareableReportTool.js";
@@ -47,6 +48,7 @@ export class MCPToolFactory {
     this.services.register('teamsService', new TeamsService());
     this.services.register('fileService', new FileService());
     this.services.register('confluenceService', new ConfluenceService());
+    this.services.register('githubService', new GitHubService());
     this.services.register('htmlFormatter', new HtmlFormatter());
     this.services.register('enhancedJiraService', new EnhancedJiraService({
       domain: process.env.JIRA_DOMAIN || '',

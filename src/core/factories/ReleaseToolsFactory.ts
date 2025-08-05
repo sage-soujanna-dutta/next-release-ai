@@ -198,8 +198,29 @@ export class ReleaseToolsFactory {
 
           const projectName = args.projectName || boardRes.data.name || `Board-${args.boardId}`;
 
+          // Fetch GitHub commits for the sprint period
+          let commits: any[] = [];
+          try {
+            const githubService = this.services.get<any>('githubService');
+            if (githubService && targetSprint.startDate && targetSprint.endDate) {
+              console.log(`🔄 Fetching GitHub commits for sprint period...`);
+              commits = await githubService.fetchCommitsForDateRange(
+                targetSprint.startDate,
+                targetSprint.endDate
+              );
+              console.log(`📊 Found ${commits.length} commits during sprint period`);
+            } else if (githubService) {
+              console.log(`🔄 Fetching recent GitHub commits...`);
+              commits = await githubService.fetchCommits();
+              console.log(`📊 Found ${commits.length} recent commits`);
+            }
+          } catch (error: any) {
+            console.warn(`⚠️ GitHub commit fetching failed: ${error.message}`);
+            commits = [];
+          }
+
           // Process the data for report generation
-          const sprintData = this.processSprintData(targetSprint, issues, projectName);
+          const sprintData = this.processSprintData(targetSprint, issues, projectName, commits);
 
           // Generate the report
           const format = args.format || 'markdown';
@@ -273,7 +294,7 @@ export class ReleaseToolsFactory {
         }
       }
 
-      private processSprintData(sprint: any, issues: any[], projectName: string) {
+      private processSprintData(sprint: any, issues: any[], projectName: string, commits: any[] = []) {
         const statusCounts = { completed: 0, inProgress: 0, todo: 0 };
         const issueTypes: Record<string, number> = {};
         const contributors: Record<string, number> = {};
@@ -323,6 +344,7 @@ export class ReleaseToolsFactory {
             name: projectName
           },
           issues,
+          commits,
           stats: {
             ...statusCounts,
             totalStoryPoints,
