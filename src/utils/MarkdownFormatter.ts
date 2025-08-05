@@ -151,7 +151,8 @@ export class MarkdownFormatter {
 
 ${sprintDates} | ${status} | ${metrics.completionRate}% Complete
 
-## 📊 Executive Summary
+<details>
+  <summary><h2 style="display:inline-block">📊 Executive Summary</h2></summary>
 
 | Metric                | Value           | Status      |
 |---------------------- |-----------------|-------------|
@@ -162,15 +163,20 @@ ${sprintDates} | ${status} | ${metrics.completionRate}% Complete
 | Sprint Duration       | ${sprintInfo.duration || 'TBD'}         | ${this.getDurationStatus(sprintInfo)} |
 | Sprint Velocity       | ${metrics.velocity} points/sprint | ${this.getVelocityTrend(metrics.velocity)} |
 
+</details>
+
 ${this.generateSprintGoalsSection(data)}
 
 ${this.generateSprintObjectivesSection(data)}
 
 ${this.generateDeliverablesSection(data)}
 
-## 📈 Sprint Comparison vs Previous Sprint
+<details>
+  <summary><h2 style="display:inline-block">📈 Sprint Comparison vs Previous Sprint</h2></summary>
 
 ${this.generateSprintComparisonSection(metrics)}
+
+</details>
 
 ${this.generateWorkBreakdownSection(analysis.workBreakdown)}
 
@@ -206,7 +212,8 @@ ${this.generateAcknowledgementsSection(analysis.topContributors)}
   }
 
   private generateWorkBreakdownSection(workBreakdown: any): string {
-    return `## 📉 Work Breakdown Analysis
+    return `<details>
+  <summary><h2 style="display:inline-block">📉 Work Breakdown Analysis</h2></summary>
 
 | Work Type     | Count     | Percentage | Focus Area           |
 |---------------|-----------|------------|----------------------|
@@ -214,11 +221,14 @@ ${this.generateAcknowledgementsSection(analysis.topContributors)}
 | Bug Fixes     | ${workBreakdown.bugs} items  | ${workBreakdown.bugsPercent}%        | Quality Maintenance  |
 | Tasks         | ${workBreakdown.tasks} items  | ${workBreakdown.tasksPercent}%        | Operations           |
 | Epics         | ${workBreakdown.epics} items  | ${workBreakdown.epicsPercent}%        | Strategic Initiatives|
-| Improvements  | ${workBreakdown.improvements} items   | ${workBreakdown.improvementsPercent}%         | Process Enhancement  |`;
+| Improvements  | ${workBreakdown.improvements} items   | ${workBreakdown.improvementsPercent}%         | Process Enhancement  |
+
+</details>`;
   }
 
   private generatePriorityStatusSection(priorityStatus: any): string {
-    return `## 🛠️ Priority Resolution Status
+    return `<details>
+  <summary><h2 style="display:inline-block">🛠️ Priority Resolution Status</h2></summary>
 
 | Priority Level | Resolved | Total | Success Rate | Status      |
 |---------------|----------|-------|--------------|-------------|
@@ -226,7 +236,9 @@ ${this.generateAcknowledgementsSection(analysis.topContributors)}
 | Major         | ${priorityStatus.major.resolved}        | ${priorityStatus.major.total}     | ${priorityStatus.major.rate}%          | ${priorityStatus.major.status} |
 | Minor         | ${priorityStatus.minor.resolved}       | ${priorityStatus.minor.total}    | ${priorityStatus.minor.rate}%          | ${priorityStatus.minor.status} |
 | Low           | ${priorityStatus.low.resolved}        | ${priorityStatus.low.total}     | ${priorityStatus.low.rate}%           | ${priorityStatus.low.status}         |
-| Blockers      | ${priorityStatus.blockers.resolved}        | ${priorityStatus.blockers.total}     | ${priorityStatus.blockers.rate}%           | ${priorityStatus.blockers.status}         |`;
+| Blockers      | ${priorityStatus.blockers.resolved}        | ${priorityStatus.blockers.total}     | ${priorityStatus.blockers.rate}%           | ${priorityStatus.blockers.status}         |
+
+</details>`;
   }
 
   private generateTopContributorsSection(contributors: any[]): string {
@@ -240,11 +252,14 @@ ${this.generateAcknowledgementsSection(analysis.topContributors)}
       `| ${c.name}     | ${c.commits}      | ${c.points} pts           | ${c.issues}              | ✨ HIGH      |`
     ).join('\n');
 
-    return `## 🏆 Top Contributors
+    return `<details>
+  <summary><h2 style="display:inline-block">🏆 Top Contributors</h2></summary>
 
 | Contributor      | Commits | Points Completed | Issues Assigned | Impact Level |
 |------------------|---------|------------------|-----------------|-------------|
-${contributorRows}`;
+${contributorRows}
+
+</details>`;
   }
 
   private generateKeyAchievementsSection(jiraIssues: JiraIssue[], completionRate: number): string {
@@ -656,7 +671,8 @@ ${achievementRows}`;
     const { jiraIssues } = data;
     const epics = jiraIssues.filter((issue: JiraIssue) => issue.fields.issuetype.name === 'Epic');
     
-    return `## 🎯 Sprint Goals
+    return `<details>
+  <summary><h2 style="display:inline-block">🎯 Sprint Goals</h2></summary>
 
 | Goal | Description | Status | Progress |
 |------|-------------|--------|----------|
@@ -665,45 +681,125 @@ ${epics.length > 0 ?
     `| ${epic.fields.summary} | Epic: ${epic.key} | ${epic.fields.status.name} | ${this.getStatusEmoji(epic.fields.status.name === 'Done' ? 100 : 50)} |`
   ).join('\n') :
   '| Complete planned sprint work | Deliver committed story points and resolve priority issues | In Progress | 🔄 |'
-}`;
+}
+
+</details>`;
   }
 
   private generateSprintObjectivesSection(data: any): string {
     const { metrics } = data;
     
-    return `## 📋 Sprint Objectives
+    return `<details>
+  <summary><h2 style="display:inline-block">📋 Sprint Objectives</h2></summary>
 
 | Objective | Target | Actual | Status |
 |-----------|--------|--------|--------|
 | Sprint Completion Rate | ≥90% | ${metrics.completionRate}% | ${metrics.completionRate >= 90 ? '✅' : '⚠️'} |
 | Story Points Delivery | ${metrics.storyPoints} pts | ${metrics.completedStoryPoints} pts | ${metrics.storyPointsCompletionRate >= 90 ? '✅' : '⚠️'} |
 | Quality Maintenance | Zero critical bugs | ${data.analysis.qualityMetrics.bugs} bugs | ${data.analysis.qualityMetrics.bugs === 0 ? '✅' : '⚠️'} |
-| Team Collaboration | High engagement | ${metrics.uniqueContributors} contributors | ✅ |`;
+| Team Collaboration | High engagement | ${metrics.uniqueContributors} contributors | ✅ |
+
+</details>`;
   }
 
   private generateDeliverablesSection(data: any): string {
-    const { jiraIssues } = data;
-    const completedIssues = jiraIssues.filter((issue: JiraIssue) => issue.fields.status.name === 'Done');
+    const { jiraIssues, githubCommits } = data;
     
-    if (completedIssues.length === 0) {
-      return `## 📦 Sprint Deliverables
+    // Sprint Deliverables show bugs, user stories, and tasks that are planned for a sprint
+    const bugs = jiraIssues.filter((issue: JiraIssue) => issue.fields.issuetype.name.toLowerCase().includes('bug'));
+    const userStories = jiraIssues.filter((issue: JiraIssue) => issue.fields.issuetype.name.toLowerCase().includes('story'));
+    const tasks = jiraIssues.filter((issue: JiraIssue) => 
+      issue.fields.issuetype.name.toLowerCase().includes('task') || 
+      issue.fields.issuetype.name.toLowerCase().includes('sub-task')
+    );
+    
+    let deliverableSection = `<details>
+  <summary><h2 style="display:inline-block">📦 Sprint Deliverables</h2></summary>
 
-*No completed deliverables to report for this sprint.*`;
+Sprint Deliverables show bugs, user stories, and tasks that are planned for a sprint. They are used to track the progress of the sprint and ensure that all planned work is completed.
+
+`;
+
+    // Bugs Section
+    if (bugs.length > 0) {
+      deliverableSection += `<details>
+  <summary><h3 style="display:inline-block">🐛 Bugs (${bugs.length})</h3></summary>
+
+| Issue | Summary | Priority | Assignee | Status |
+|-------|---------|----------|----------|--------|
+`;
+      
+      bugs.forEach((issue: JiraIssue) => {
+        const priority = issue.fields.priority?.name || 'Medium';
+        const assignee = issue.fields.assignee?.displayName || 'Unassigned';
+        const status = issue.fields.status.name;
+        const statusIcon = status === 'Done' ? '✅' : status === 'In Progress' ? '🔄' : '📋';
+        deliverableSection += `| ${issue.key} | ${issue.fields.summary} | ${priority} | ${assignee} | ${statusIcon} ${status} |\n`;
+      });
+      deliverableSection += '</details>\n\n';
     }
 
-    const deliverableRows = completedIssues.map((issue: JiraIssue) => {
-      const type = this.getIssueTypeIcon(issue.fields.issuetype.name);
-      const points = issue.fields?.customfield_10004 || issue.fields?.storyPoints || 0;
-      return `| ${type} ${issue.key} | ${issue.fields.summary} | ${issue.fields.issuetype.name} | ${points} pts | ✅ Delivered |`;
-    }).join('\n');
+    // User Stories Section
+    if (userStories.length > 0) {
+      deliverableSection += `<details>
+  <summary><h3 style="display:inline-block">✨ User Stories (${userStories.length})</h3></summary>
 
-    return `<details>
-  <summary><h2 style="display:inline-block"> 📦 Sprint Deliverables</h2></summary>
+| Issue | Summary | Story Points | Assignee | Status |
+|-------|---------|--------------|----------|--------|
+`;
+      
+      userStories.forEach((issue: JiraIssue) => {
+        const points = issue.fields?.customfield_10004 || issue.fields?.storyPoints || 0;
+        const assignee = issue.fields.assignee?.displayName || 'Unassigned';
+        const status = issue.fields.status.name;
+        const statusIcon = status === 'Done' ? '✅' : status === 'In Progress' ? '🔄' : '📋';
+        deliverableSection += `| ${issue.key} | ${issue.fields.summary} | ${points} pts | ${assignee} | ${statusIcon} ${status} |\n`;
+      });
+      deliverableSection += '</details>\n\n';
+    }
 
-| Issue | Summary | Type | Points | Status |
-|-------|---------|------|--------|--------|
-${deliverableRows}
-</details>`;
+    // Tasks Section
+    if (tasks.length > 0) {
+      deliverableSection += `<details>
+  <summary><h3 style="display:inline-block">📋 Tasks (${tasks.length})</h3></summary>
+
+| Issue | Summary | Type | Assignee | Status |
+|-------|---------|------|----------|--------|
+`;
+      
+      tasks.forEach((issue: JiraIssue) => {
+        const assignee = issue.fields.assignee?.displayName || 'Unassigned';
+        const status = issue.fields.status.name;
+        const statusIcon = status === 'Done' ? '✅' : status === 'In Progress' ? '🔄' : '📋';
+        deliverableSection += `| ${issue.key} | ${issue.fields.summary} | ${issue.fields.issuetype.name} | ${assignee} | ${statusIcon} ${status} |\n`;
+      });
+      deliverableSection += '</details>\n\n';
+    }
+
+    // Commits Section
+    if (githubCommits && githubCommits.length > 0) {
+      deliverableSection += `<details>
+  <summary><h3 style="display:inline-block">💾 Commits (${githubCommits.length})</h3></summary>
+
+All commits that are part of the sprint, providing a complete view of the work done during the sprint.
+
+| Commit | Message | Author | Date |
+|--------|---------|--------|------|
+`;
+      
+      githubCommits.forEach((commit: any) => {
+        const shortSha = commit.sha ? commit.sha.substring(0, 7) : 'N/A';
+        const message = commit.message || commit.commit?.message || 'No message';
+        const author = commit.author?.name || commit.commit?.author?.name || 'Unknown';
+        const date = commit.date || commit.commit?.author?.date || 'Unknown';
+        const formattedDate = date !== 'Unknown' ? new Date(date).toLocaleDateString() : 'Unknown';
+        deliverableSection += `| \`${shortSha}\` | ${message.split('\n')[0]} | ${author} | ${formattedDate} |\n`;
+      });
+      deliverableSection += '</details>\n\n';
+    }
+
+    deliverableSection += '</details>';
+    return deliverableSection;
   }
 
   private generateSprintComparisonSection(metrics: any): string {
@@ -766,7 +862,8 @@ ${improvementRows}`;
   }
 
   private generateSprintAnalysisSection(analysis: any): string {
-    return `## 🔍 Sprint Analysis
+    return `<details>
+  <summary><h2 style="display:inline-block">🔍 Sprint Analysis</h2></summary>
 
 ### Performance Highlights
 - **Completion Rate**: ${analysis.qualityMetrics.totalIssues > 0 ? 
@@ -780,11 +877,14 @@ ${improvementRows}`;
 |------------------|---------|----------------|
 | Velocity | ${analysis.velocityAnalysis.velocityPercentage}% of planned velocity achieved | ${analysis.velocityAnalysis.velocityPercentage >= 90 ? 'Maintain current practices' : 'Review sprint planning estimation'} |
 | Quality | ${analysis.qualityMetrics.bugRatio}% bug ratio | ${analysis.qualityMetrics.bugRatio <= 10 ? 'Excellent quality maintained' : 'Increase focus on testing'} |
-| Collaboration | Strong team participation | Continue encouraging collaborative practices |`;
+| Collaboration | Strong team participation | Continue encouraging collaborative practices |
+
+</details>`;
   }
 
   private generateQualityMetricsSection(qualityMetrics: any): string {
-    return `## 📊 Quality Metrics
+    return `<details>
+  <summary><h2 style="display:inline-block">📊 Quality Metrics</h2></summary>
 
 | Metric | Value | Target | Status |
 |--------|-------|--------|--------|
@@ -800,7 +900,9 @@ ${qualityMetrics.qualityScore === 'Excellent' ?
   qualityMetrics.qualityScore === 'Good' ?
   '✅ Good quality standards maintained with manageable defect levels.' :
   '⚠️ Quality metrics indicate need for improved testing and defect prevention.'
-}`;
+}
+
+</details>`;
   }
 
   private generateVelocityAnalysisSection(velocityAnalysis: any): string {
@@ -827,16 +929,20 @@ ${qualityMetrics.qualityScore === 'Excellent' ?
     );
 
     if (completedFeatures.length === 0) {
-      return `## 📝 Release Notes
+      return `<details>
+  <summary><h2 style="display:inline-block">📝 Release Notes</h2></summary>
 
-*No completed features to include in release notes for this sprint.*`;
+*No completed features to include in release notes for this sprint.*
+
+</details>`;
     }
 
     const featureNotes = completedFeatures.slice(0, 10).map((issue: JiraIssue) => 
       `- ${this.getIssueTypeIcon(issue.fields.issuetype.name)} **${issue.fields.summary}** (${issue.key})`
     ).join('\n');
 
-    return `## 📝 Release Notes
+    return `<details>
+  <summary><h2 style="display:inline-block">📝 Release Notes</h2></summary>
 
 ### New Features & Improvements
 ${featureNotes}
@@ -846,7 +952,9 @@ ${completedFeatures.length > 10 ? `\n*... and ${completedFeatures.length - 10} m
 ${this.getBugFixNotes(jiraIssues)}
 
 ### Technical Improvements
-${this.getTechnicalImprovements(jiraIssues)}`;
+${this.getTechnicalImprovements(jiraIssues)}
+
+</details>`;
   }
 
   private getBugFixNotes(jiraIssues: JiraIssue[]): string {
