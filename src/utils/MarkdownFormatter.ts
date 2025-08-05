@@ -180,10 +180,6 @@ ${this.generateSprintComparisonSection(metrics)}
 
 ${this.generateWorkBreakdownSection(analysis.workBreakdown)}
 
-${this.generateEpicsSection(data.jiraIssues)}
-
-${this.generateImprovementsSection(data.jiraIssues)}
-
 ${this.generatePriorityStatusSection(analysis.priorityStatus)}
 
 ${this.generateTopContributorsSection(analysis.topContributors)}
@@ -220,8 +216,6 @@ ${this.generateAcknowledgementsSection(analysis.topContributors)}
 | User Stories  | ${workBreakdown.stories} items  | ${workBreakdown.storiesPercent}%        | Feature Development  |
 | Bug Fixes     | ${workBreakdown.bugs} items  | ${workBreakdown.bugsPercent}%        | Quality Maintenance  |
 | Tasks         | ${workBreakdown.tasks} items  | ${workBreakdown.tasksPercent}%        | Operations           |
-| Epics         | ${workBreakdown.epics} items  | ${workBreakdown.epicsPercent}%        | Strategic Initiatives|
-| Improvements  | ${workBreakdown.improvements} items   | ${workBreakdown.improvementsPercent}%         | Process Enhancement  |
 
 </details>`;
   }
@@ -815,50 +809,6 @@ All commits that are part of the sprint, providing a complete view of the work d
 | Completion Rate | ${metrics.completionRate}%            | ${estimatedPrevious.completionRate}%             | ${metrics.completionRate - estimatedPrevious.completionRate > 0 ? '+' : ''}${metrics.completionRate - estimatedPrevious.completionRate}%    | ${metrics.completionRate >= estimatedPrevious.completionRate ? '🔼' : '🔽'} ${metrics.completionRate >= estimatedPrevious.completionRate ? 'improving' : 'declining'} |
 | Velocity        | ${metrics.completedStoryPoints} points     | ${estimatedPrevious.storyPoints} points      | ${metrics.completedStoryPoints - estimatedPrevious.storyPoints > 0 ? '+' : ''}${metrics.completedStoryPoints - estimatedPrevious.storyPoints} pts | ${metrics.completedStoryPoints >= estimatedPrevious.storyPoints ? '🔼' : '🔽'} ${metrics.completedStoryPoints >= estimatedPrevious.storyPoints ? 'improving' : 'declining'} |
 | Development Activity | ${metrics.totalCommits} commits | ${estimatedPrevious.commits} commits | ${metrics.totalCommits - estimatedPrevious.commits > 0 ? '+' : ''}${metrics.totalCommits - estimatedPrevious.commits} | ${metrics.totalCommits >= estimatedPrevious.commits ? '🔼' : '🔽'} ${metrics.totalCommits >= estimatedPrevious.commits ? 'increasing' : 'decreasing'} |`;
-  }
-
-  private generateEpicsSection(jiraIssues: JiraIssue[]): string {
-    const epics = jiraIssues.filter(issue => issue.fields.issuetype.name === 'Epic');
-    
-    if (epics.length === 0) {
-      return `## 🎯 Epics
-
-*No epics included in this sprint.*`;
-    }
-
-    const epicRows = epics.map(epic => {
-      const progress = epic.fields.status.name === 'Done' ? '100%' : 
-                     epic.fields.status.name === 'In Progress' ? '50%' : '0%';
-      return `| ${epic.key} | ${epic.fields.summary} | ${epic.fields.status.name} | ${progress} | ${epic.fields.assignee?.displayName || 'Unassigned'} |`;
-    }).join('\n');
-
-    return `## 🎯 Epics
-
-| Epic | Summary | Status | Progress | Assignee |
-|------|---------|--------|----------|----------|
-${epicRows}`;
-  }
-
-  private generateImprovementsSection(jiraIssues: JiraIssue[]): string {
-    const improvements = jiraIssues.filter(issue => issue.fields.issuetype.name === 'Improvement');
-    
-    if (improvements.length === 0) {
-      return `## ⚡ Improvements
-
-*No improvement items included in this sprint.*`;
-    }
-
-    const improvementRows = improvements.map(improvement => {
-      const impact = improvement.fields.priority?.name === 'High' ? 'High' : 
-                    improvement.fields.priority?.name === 'Medium' ? 'Medium' : 'Low';
-      return `| ${improvement.key} | ${improvement.fields.summary} | ${improvement.fields.status.name} | ${impact} | ${improvement.fields.assignee?.displayName || 'Unassigned'} |`;
-    }).join('\n');
-
-    return `## ⚡ Improvements
-
-| Improvement | Summary | Status | Impact | Assignee |
-|-------------|---------|--------|--------|----------|
-${improvementRows}`;
   }
 
   private generateSprintAnalysisSection(analysis: any): string {
@@ -1571,16 +1521,12 @@ ${boardStatus}
     const stories = jiraIssues.filter(issue => issue.fields.issuetype.name === 'Story').length;
     const bugs = jiraIssues.filter(issue => issue.fields.issuetype.name === 'Bug').length;
     const tasks = jiraIssues.filter(issue => issue.fields.issuetype.name === 'Task').length;
-    const epics = jiraIssues.filter(issue => issue.fields.issuetype.name === 'Epic').length;
-    const improvements = jiraIssues.filter(issue => issue.fields.issuetype.name === 'Improvement').length;
 
     return {
-      stories, bugs, tasks, epics, improvements,
+      stories, bugs, tasks,
       storiesPercent: total > 0 ? Math.round((stories / total) * 100) : 0,
       bugsPercent: total > 0 ? Math.round((bugs / total) * 100) : 0,
       tasksPercent: total > 0 ? Math.round((tasks / total) * 100) : 0,
-      epicsPercent: total > 0 ? Math.round((epics / total) * 100) : 0,
-      improvementsPercent: total > 0 ? Math.round((improvements / total) * 100) : 0,
     };
   }
 
@@ -1690,8 +1636,17 @@ ${boardStatus}
   }
 
   private getVelocityTrend(storyPoints: number): string {
-    // This could be enhanced with historical data
-    return storyPoints > 100 ? 'Stable' : 'Declining';
+    // Enhanced velocity trend analysis based on relative performance
+    // This could be further enhanced with historical sprint data
+    
+    // For now, we'll use a more intelligent approach based on typical sprint performance
+    // Most healthy teams complete 70-90% of planned story points
+    
+    if (storyPoints >= 50) return 'Excellent';     // High velocity teams
+    if (storyPoints >= 30) return 'Stable';       // Good performance
+    if (storyPoints >= 15) return 'Moderate';     // Acceptable performance  
+    if (storyPoints >= 5) return 'Declining';     // Below expectations
+    return 'Needs Attention';                     // Very low performance
   }
 
   private assessRiskLevel(jiraIssues: JiraIssue[]): string {
