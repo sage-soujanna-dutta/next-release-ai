@@ -275,7 +275,9 @@ export class ReleaseToolsFactory {
             .replace('T', '-')
             .substring(0, 19);
           
-          const filename = `${targetSprint.name.replace(/[^a-zA-Z0-9-]/g, '-')}-sprint-report-${timestamp}.${format}`;
+          // Use .md for markdown, .html for html
+          let extension = format === 'markdown' ? 'md' : format;
+          const filename = `${targetSprint.name.replace(/[^a-zA-Z0-9-]/g, '-')}-sprint-report-${timestamp}.${extension}`;
           const filePath = path.join(outputDir, filename);
 
           let content: string;
