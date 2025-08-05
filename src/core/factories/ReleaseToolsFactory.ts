@@ -200,22 +200,53 @@ export class ReleaseToolsFactory {
 
           // Fetch GitHub commits for the sprint period
           let commits: any[] = [];
+          let debugInfo = [`DEBUG - Timestamp: ${new Date().toISOString()}`];
+          
           try {
-            const githubService = this.services.get<any>('githubService');
+            debugInfo.push(`DEBUG - Attempting to fetch GitHub commits...`);
+            
+            // Try to create GitHubService directly as fallback
+            let githubService = this.services.get<any>('githubService');
+            if (!githubService) {
+              debugInfo.push(`DEBUG - GitHubService not in registry, trying direct instantiation...`);
+              try {
+                const { GitHubService } = await import('../../services/GitHubService.js');
+                githubService = new GitHubService();
+                debugInfo.push(`DEBUG - Direct GitHubService instantiation successful`);
+              } catch (importError: any) {
+                debugInfo.push(`DEBUG - Direct instantiation failed: ${importError.message}`);
+              }
+            } else {
+              debugInfo.push(`DEBUG - GitHubService found in registry`);
+            }
+            
             if (githubService && targetSprint.startDate && targetSprint.endDate) {
               console.log(`🔄 Fetching GitHub commits for sprint period...`);
+              debugInfo.push(`DEBUG - Sprint dates: ${targetSprint.startDate} to ${targetSprint.endDate}`);
               commits = await githubService.fetchCommitsForDateRange(
                 targetSprint.startDate,
                 targetSprint.endDate
               );
               console.log(`📊 Found ${commits.length} commits during sprint period`);
+              debugInfo.push(`DEBUG - Found ${commits.length} commits during sprint period`);
+              if (commits.length > 0) {
+                const uniqueContributors = [...new Set(commits.map((c: any) => c.author))];
+                debugInfo.push(`DEBUG - Unique contributors: ${uniqueContributors.length}`);
+                debugInfo.push(`DEBUG - Contributors: ${uniqueContributors.slice(0, 5).join(', ')}`);
+              }
             } else if (githubService) {
               console.log(`🔄 Fetching recent GitHub commits...`);
               commits = await githubService.fetchCommits();
               console.log(`📊 Found ${commits.length} recent commits`);
+              debugInfo.push(`DEBUG - Found ${commits.length} recent commits (fallback)`);
+            } else {
+              console.log(`⚠️ GitHubService not available`);
+              debugInfo.push(`DEBUG - GitHubService not available`);
             }
           } catch (error: any) {
             console.warn(`⚠️ GitHub commit fetching failed: ${error.message}`);
+            debugInfo.push(`DEBUG - GitHub fetch failed: ${error.message}`);
+            debugInfo.push(`DEBUG - Full error: ${error.stack}`);
             commits = [];
           }
 
@@ -229,6 +260,14 @@ export class ReleaseToolsFactory {
           // Ensure output directory exists
           if (!fs.existsSync(outputDir)) {
             fs.mkdirSync(outputDir, { recursive: true });
+          }
+
+          // Write debug info to file
+          try {
+            const debugPath = path.join(outputDir, 'github-debug.log');
+            fs.writeFileSync(debugPath, debugInfo.join('\n'), 'utf8');
+          } catch (e) {
+            // Ignore file write errors
           }
 
           const timestamp = new Date().toISOString()
@@ -295,6 +334,11 @@ export class ReleaseToolsFactory {
       }
 
       private processSprintData(sprint: any, issues: any[], projectName: string, commits: any[] = []) {
+        console.log(`🔍 DEBUG - processSprintData:`);
+        console.log(`   📊 Issues: ${issues.length}`);
+        console.log(`   💻 Commits: ${commits.length}`);
+        console.log(`   📋 Project: ${projectName}`);
+        
         const statusCounts = { completed: 0, inProgress: 0, todo: 0 };
         const issueTypes: Record<string, number> = {};
         const contributors: Record<string, number> = {};
@@ -329,6 +373,10 @@ export class ReleaseToolsFactory {
         });
 
         const completionRate = issues.length > 0 ? Math.round((statusCounts.completed / issues.length) * 100) : 0;
+
+        console.log(`🔍 DEBUG - processSprintData result:`);
+        console.log(`   📊 Issues: ${issues.length}, Commits: ${commits.length}`);
+        console.log(`   ✅ Completion Rate: ${completionRate}%`);
 
         return {
           sprint: {
@@ -367,6 +415,17 @@ export class ReleaseToolsFactory {
         const commits = data.commits || [];
         const sprintName = data.sprint?.name || data.project?.name || "Sprint Report";
         const sprintDetails = data.sprint || {};
+        
+        // Debug logging
+        console.log(`🔍 DEBUG - generateMarkdownReport:`);
+        console.log(`   📊 JIRA Issues: ${jiraIssues.length}`);
+        console.log(`   💻 Commits: ${commits.length}`);
+        console.log(`   📋 Sprint Name: ${sprintName}`);
+        if (commits.length > 0) {
+          const uniqueContributors = [...new Set(commits.map((c: any) => c.author))];
+          console.log(`   👥 Unique Contributors: ${uniqueContributors.length}`);
+        }
+        
         return formatter.format(jiraIssues, commits, sprintName, sprintDetails);
       }
 

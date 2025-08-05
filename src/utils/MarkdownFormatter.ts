@@ -2,6 +2,14 @@ import { JiraIssue } from "../services/JiraService.js";
 import { GitHubCommit } from "../services/GitHubService.js";
 
 export class MarkdownFormatter {
+  /**
+   * Formats the sprint report in Markdown.
+   * @param jiraIssues Array of JIRA issues
+   * @param commits Array of GitHub commits
+   * @param sprintName Optional sprint name
+   * @param sprintDetails Optional sprint details
+   * @returns Formatted Markdown string
+   */
   format(jiraIssues: JiraIssue[], commits: GitHubCommit[], sprintName?: string, sprintDetails?: any): string {
     // Extract comprehensive sprint information, merging with provided sprint details
     const sprintInfo = this.extractSprintInfo(jiraIssues, sprintDetails);
@@ -21,6 +29,12 @@ export class MarkdownFormatter {
     });
   }
 
+  /**
+   * Extracts sprint information from JIRA issues or provided sprint details.
+   * @param jiraIssues Array of JIRA issues
+   * @param sprintDetails Optional sprint details
+   * @returns Extracted sprint information
+   */
   private extractSprintInfo(jiraIssues: JiraIssue[], sprintDetails?: any): any {
     // If sprint details are provided, use them first
     if (sprintDetails) {
@@ -81,6 +95,12 @@ export class MarkdownFormatter {
     };
   }
 
+  /**
+   * Calculates comprehensive metrics from JIRA issues and GitHub commits.
+   * @param jiraIssues Array of JIRA issues
+   * @param commits Array of GitHub commits
+   * @returns Calculated metrics
+   */
   private calculateComprehensiveMetrics(jiraIssues: JiraIssue[], commits: GitHubCommit[]): any {
     const totalIssues = jiraIssues.length;
     const completedIssues = jiraIssues.filter(issue => issue.fields.status.name === 'Done').length;
@@ -167,7 +187,7 @@ ${sprintDates} | ${status} | ${metrics.completionRate}% Complete
 
 ${this.generateSprintGoalsSection(data)}
 
-${this.generateSprintObjectivesSection(data)}
+${this.generateSprintMetricsSection(data)}
 
 ${this.generateDeliverablesSection(data)}
 
@@ -200,6 +220,9 @@ ${this.generateConclusionSection(data)}
 *Generated: ${new Date().toLocaleString()}*
 *Report Status: ${this.getReportStatus(metrics.completionRate)}*
 *Sprint State: ${sprintInfo.state}*
+
+---
+**⚠️ Disclaimer:** This sprint report is auto-generated based on JIRA and GitHub data. While comprehensive, it may not include all details or nuances of the sprint work. Please review with your team for completeness and accuracy.
 `;
   }
 
@@ -655,14 +678,14 @@ ${epics.length > 0 ?
 </details>`;
   }
 
-  private generateSprintObjectivesSection(data: any): string {
+  private generateSprintMetricsSection(data: any): string {
     const { metrics } = data;
     
     return `<details>
-  <summary><h2 style="display:inline-block">📋 Sprint Objectives</h2></summary>
+  <summary><h2 style="display:inline-block">� Sprint Metrics</h2></summary>
 
-| Objective | Target | Actual | Status |
-|-----------|--------|--------|--------|
+| Metric | Target | Actual | Status |
+|--------|--------|--------|--------|
 | Sprint Completion Rate | ≥90% | ${metrics.completionRate}% | ${metrics.completionRate >= 90 ? '✅' : '⚠️'} |
 | Story Points Delivery | ${metrics.storyPoints} pts | ${metrics.completedStoryPoints} pts | ${metrics.storyPointsCompletionRate >= 90 ? '✅' : '⚠️'} |
 | Quality Maintenance | Zero critical bugs | ${data.analysis.qualityMetrics.bugs} bugs | ${data.analysis.qualityMetrics.bugs === 0 ? '✅' : '⚠️'} |
@@ -673,6 +696,9 @@ ${epics.length > 0 ?
 
   private generateDeliverablesSection(data: any): string {
     const { jiraIssues, githubCommits } = data;
+    
+    // Get JIRA base URL for creating links
+    const jiraBaseUrl = process.env.JIRA_DOMAIN ? `https://${process.env.JIRA_DOMAIN}` : 'https://jira.sage.com';
     
     // Sprint Deliverables show bugs, user stories, and tasks that are planned for a sprint
     const bugs = jiraIssues.filter((issue: JiraIssue) => issue.fields.issuetype.name.toLowerCase().includes('bug'));
@@ -703,7 +729,8 @@ Sprint Deliverables show bugs, user stories, and tasks that are planned for a sp
         const assignee = issue.fields.assignee?.displayName || 'Unassigned';
         const status = issue.fields.status.name;
         const statusIcon = status === 'Done' ? '✅' : status === 'In Progress' ? '🔄' : '📋';
-        deliverableSection += `| ${issue.key} | ${issue.fields.summary} | ${priority} | ${assignee} | ${statusIcon} ${status} |\n`;
+        const issueLink = `[${issue.key}](${jiraBaseUrl}/browse/${issue.key})`;
+        deliverableSection += `| ${issueLink} | ${issue.fields.summary} | ${priority} | ${assignee} | ${statusIcon} ${status} |\n`;
       });
       deliverableSection += '</details>\n\n';
     }
@@ -722,7 +749,8 @@ Sprint Deliverables show bugs, user stories, and tasks that are planned for a sp
         const assignee = issue.fields.assignee?.displayName || 'Unassigned';
         const status = issue.fields.status.name;
         const statusIcon = status === 'Done' ? '✅' : status === 'In Progress' ? '🔄' : '📋';
-        deliverableSection += `| ${issue.key} | ${issue.fields.summary} | ${points} pts | ${assignee} | ${statusIcon} ${status} |\n`;
+        const issueLink = `[${issue.key}](${jiraBaseUrl}/browse/${issue.key})`;
+        deliverableSection += `| ${issueLink} | ${issue.fields.summary} | ${points} pts | ${assignee} | ${statusIcon} ${status} |\n`;
       });
       deliverableSection += '</details>\n\n';
     }
@@ -740,7 +768,8 @@ Sprint Deliverables show bugs, user stories, and tasks that are planned for a sp
         const assignee = issue.fields.assignee?.displayName || 'Unassigned';
         const status = issue.fields.status.name;
         const statusIcon = status === 'Done' ? '✅' : status === 'In Progress' ? '🔄' : '📋';
-        deliverableSection += `| ${issue.key} | ${issue.fields.summary} | ${issue.fields.issuetype.name} | ${assignee} | ${statusIcon} ${status} |\n`;
+        const issueLink = `[${issue.key}](${jiraBaseUrl}/browse/${issue.key})`;
+        deliverableSection += `| ${issueLink} | ${issue.fields.summary} | ${issue.fields.issuetype.name} | ${assignee} | ${statusIcon} ${status} |\n`;
       });
       deliverableSection += '</details>\n\n';
     }
