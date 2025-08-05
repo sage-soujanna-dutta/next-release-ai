@@ -182,8 +182,6 @@ ${this.generateWorkBreakdownSection(analysis.workBreakdown)}
 
 ${this.generatePriorityStatusSection(analysis.priorityStatus)}
 
-${this.generateTopContributorsSection(analysis.topContributors)}
-
 ${this.generateSprintAnalysisSection(analysis)}
 
 ${this.generateQualityMetricsSection(analysis.qualityMetrics)}
@@ -197,8 +195,6 @@ ${this.generateActionItemsSection(analysis.actionItems)}
 ${this.generateNextStepsSection(analysis.nextSteps)}
 
 ${this.generateConclusionSection(data)}
-
-${this.generateAcknowledgementsSection(analysis.topContributors)}
 
 ---
 *Generated: ${new Date().toLocaleString()}*
@@ -231,27 +227,6 @@ ${this.generateAcknowledgementsSection(analysis.topContributors)}
 | Minor         | ${priorityStatus.minor.resolved}       | ${priorityStatus.minor.total}    | ${priorityStatus.minor.rate}%          | ${priorityStatus.minor.status} |
 | Low           | ${priorityStatus.low.resolved}        | ${priorityStatus.low.total}     | ${priorityStatus.low.rate}%           | ${priorityStatus.low.status}         |
 | Blockers      | ${priorityStatus.blockers.resolved}        | ${priorityStatus.blockers.total}     | ${priorityStatus.blockers.rate}%           | ${priorityStatus.blockers.status}         |
-
-</details>`;
-  }
-
-  private generateTopContributorsSection(contributors: any[]): string {
-    if (contributors.length === 0) {
-      return `## 🏆 Top Contributors
-
-*No contributor data available for this sprint.*`;
-    }
-
-    const contributorRows = contributors.map(c => 
-      `| ${c.name}     | ${c.commits}      | ${c.points} pts           | ${c.issues}              | ✨ HIGH      |`
-    ).join('\n');
-
-    return `<details>
-  <summary><h2 style="display:inline-block">🏆 Top Contributors</h2></summary>
-
-| Contributor      | Commits | Points Completed | Issues Assigned | Impact Level |
-|------------------|---------|------------------|-----------------|-------------|
-${contributorRows}
 
 </details>`;
   }
@@ -1053,26 +1028,6 @@ The insights and action items from this sprint will inform planning for upcoming
     if (completionRate >= 85) return 'Strong performance meeting expectations';
     if (completionRate >= 70) return 'Good performance with room for improvement';
     return 'Performance below target, requiring attention';
-  }
-
-  private generateAcknowledgementsSection(contributors: any[]): string {
-    if (contributors.length === 0) {
-      return `## 🙏 Acknowledgements
-
-*Thank you to all team members who contributed to this sprint's success.*`;
-    }
-
-    const contributorList = contributors.map(c => 
-      `- **${c.name}**: ${c.commits} commits, ${c.points} story points, ${c.issues} issues assigned`
-    ).join('\n');
-
-    return `## 🙏 Acknowledgements
-
-Special thanks to all team members for their dedication and contributions:
-
-${contributorList}
-
-The success of this sprint is a result of the collective effort, collaboration, and commitment of the entire team.`;
   }
 
   // Additional section generation methods
