@@ -668,22 +668,139 @@ ${achievementRows}`;
   }
   // Section generation methods
   private generateSprintGoalsSection(data: any): string {
-    const { jiraIssues } = data;
+    const { jiraIssues, metrics } = data;
     const epics = jiraIssues.filter((issue: JiraIssue) => issue.fields.issuetype.name === 'Epic');
+    const stories = jiraIssues.filter((issue: JiraIssue) => issue.fields.issuetype.name === 'Story');
+    const bugs = jiraIssues.filter((issue: JiraIssue) => issue.fields.issuetype.name === 'Bug');
+    const tasks = jiraIssues.filter((issue: JiraIssue) => issue.fields.issuetype.name === 'Task');
+    
+    // Generate specific goals based on the sprint content
+    const sprintGoals = this.generateSpecificSprintGoals(epics, stories, bugs, tasks, metrics);
     
     return `<details>
-  <summary><h2 style="display:inline-block">🎯 Sprint Goals</h2></summary>
+  <summary><h2 style="display:inline-block">🎯 Sprint Goals & Objectives</h2></summary>
 
-| Goal | Description | Status | Progress |
-|------|-------------|--------|----------|
-${epics.length > 0 ? 
-  epics.map((epic: JiraIssue) => 
-    `| ${epic.fields.summary} | Epic: ${epic.key} | ${epic.fields.status.name} | ${this.getStatusEmoji(epic.fields.status.name === 'Done' ? 100 : 50)} |`
-  ).join('\n') :
-  '| Complete planned sprint work | Deliver committed story points and resolve priority issues | In Progress | 🔄 |'
-}
+| Priority | Goal | Success Criteria | Status | Progress |
+|----------|------|------------------|--------|----------|
+${sprintGoals.map(goal => 
+  `| ${goal.priority} | ${goal.goal} | ${goal.criteria} | ${goal.status} | ${goal.progress} |`
+).join('\n')}
+
+### 📋 Sprint Focus Areas
+${this.generateFocusAreas(epics, stories, bugs, tasks)}
 
 </details>`;
+  }
+
+  private generateSpecificSprintGoals(epics: JiraIssue[], stories: JiraIssue[], bugs: JiraIssue[], tasks: JiraIssue[], metrics: any): any[] {
+    const goals = [];
+    
+    // Epic-based goals
+    if (epics.length > 0) {
+      epics.forEach(epic => {
+        // Find stories related to this epic (by epic link or parent relationship)
+        const epicStories = stories.filter(story => 
+          (story.fields.epic?.key === epic.key) || 
+          (story.fields.parent?.key === epic.key) ||
+          (story.fields.parent?.fields?.issuetype?.name === 'Epic' && story.fields.parent.key === epic.key)
+        );
+        const completedStories = epicStories.filter(story => 
+          story.fields.status.name === 'Done'
+        );
+        const progressPercent = epicStories.length > 0 ? 
+          Math.round((completedStories.length / epicStories.length) * 100) : 
+          (epic.fields.status.name === 'Done' ? 100 : 50);
+        
+        goals.push({
+          priority: '🔥 High',
+          goal: `Complete ${epic.fields.summary}`,
+          criteria: epicStories.length > 0 ? 
+            `Deliver ${epicStories.length} user stories (${epic.key})` : 
+            `Progress epic initiative (${epic.key})`,
+          status: epic.fields.status.name,
+          progress: `${this.getProgressEmoji(progressPercent)} ${progressPercent}%`
+        });
+      });
+    }
+    
+    // Story point commitment goal
+    const totalStoryPoints = metrics.totalStoryPoints || 0;
+    const completedStoryPoints = metrics.completedStoryPoints || 0;
+    const storyPointProgress = totalStoryPoints > 0 ? 
+      Math.round((completedStoryPoints / totalStoryPoints) * 100) : 0;
+    
+    goals.push({
+      priority: '📈 High',
+      goal: 'Meet Story Point Commitment',
+      criteria: `Complete ${totalStoryPoints} committed story points`,
+      status: storyPointProgress >= 90 ? 'On Track' : storyPointProgress >= 70 ? 'At Risk' : 'Behind',
+      progress: `${this.getProgressEmoji(storyPointProgress)} ${storyPointProgress}%`
+    });
+    
+    // Bug resolution goal
+    if (bugs.length > 0) {
+      const resolvedBugs = bugs.filter(bug => bug.fields.status.name === 'Done').length;
+      const bugProgress = Math.round((resolvedBugs / bugs.length) * 100);
+      
+      goals.push({
+        priority: '🐛 Medium',
+        goal: 'Resolve Critical Bugs',
+        criteria: `Fix ${bugs.length} identified bugs and issues`,
+        status: bugProgress >= 80 ? 'On Track' : 'In Progress',
+        progress: `${this.getProgressEmoji(bugProgress)} ${resolvedBugs}/${bugs.length} fixed`
+      });
+    }
+    
+    // Quality and delivery goal
+    const completionRate = metrics.completionRate || 0;
+    goals.push({
+      priority: '✅ Medium',
+      goal: 'Maintain Quality Standards',
+      criteria: 'Achieve >85% completion rate with zero critical defects',
+      status: completionRate >= 85 ? 'Achieved' : 'In Progress',
+      progress: `${this.getProgressEmoji(completionRate)} ${completionRate}% complete`
+    });
+    
+    return goals;
+  }
+
+  private generateFocusAreas(epics: JiraIssue[], stories: JiraIssue[], bugs: JiraIssue[], tasks: JiraIssue[]): string {
+    const focusAreas = [];
+    
+    // Primary development focus
+    if (stories.length > 0) {
+      const priorityStories = stories.filter(story => 
+        story.fields.priority && ['Highest', 'High'].includes(story.fields.priority.name)
+      ).length;
+      focusAreas.push(`**Feature Development**: ${stories.length} user stories (${priorityStories} high priority)`);
+    }
+    
+    // Technical debt and maintenance
+    if (tasks.length > 0) {
+      focusAreas.push(`**Technical Tasks**: ${tasks.length} infrastructure and maintenance items`);
+    }
+    
+    // Bug fixes and quality
+    if (bugs.length > 0) {
+      const criticalBugs = bugs.filter(bug => 
+        bug.fields.priority && ['Highest', 'High'].includes(bug.fields.priority.name)
+      ).length;
+      focusAreas.push(`**Quality Assurance**: ${bugs.length} bug fixes (${criticalBugs} critical)`);
+    }
+    
+    // Epic progression
+    if (epics.length > 0) {
+      focusAreas.push(`**Epic Advancement**: Progress on ${epics.length} major initiative(s)`);
+    }
+    
+    return focusAreas.length > 0 ? focusAreas.join('\n- ') : '- **General Development**: Completing planned sprint commitments';
+  }
+
+  private getProgressEmoji(percentage: number): string {
+    if (percentage >= 90) return '🟢';
+    if (percentage >= 70) return '🟡';
+    if (percentage >= 50) return '🟠';
+    return '🔴';
   }
 
   private generateSprintMetricsSection(data: any): string {

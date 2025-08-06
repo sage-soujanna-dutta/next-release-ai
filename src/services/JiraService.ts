@@ -27,6 +27,19 @@ export interface JiraIssue {
     customfield_10003?: number; // Another Story Points field
     customfield_10005?: number; // Another Story Points field
     storyPoints?: number; // Normalized story points field
+    epic?: {
+      key: string;
+      name: string;
+    };
+    parent?: {
+      key: string;
+      fields: {
+        summary: string;
+        issuetype: {
+          name: string;
+        };
+      };
+    };
   };
 }
 
