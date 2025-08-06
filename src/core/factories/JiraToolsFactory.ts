@@ -14,7 +14,6 @@ export class JiraToolsFactory {
       description: "Tools for JIRA issue management, fetching, and analysis",
       tools: [
         this.createFetchJiraIssuesTool(),
-        this.createFindBoardByProjectTool(),
         this.createListAllBoardsTool(),
         this.createFindBoardIdTool(),
         this.createBulkJiraUpdateTool(),
@@ -529,6 +528,9 @@ export class JiraToolsFactory {
     })(this.services, this.toolInstances);
   }
 
+  /* REMOVED: createFindBoardByProjectTool() method
+   * This tool has been removed per user request to eliminate the find_board_by_project functionality
+   * 
   private createFindBoardByProjectTool(): MCPTool {
     return new (class extends BaseMCPTool {
       name = "find_board_by_project";
@@ -749,6 +751,7 @@ export class JiraToolsFactory {
       }
     })(this.services);
   }
+  */ // END REMOVED SECTION
 
   private createFindBoardIdTool(): MCPTool {
     return new (class extends BaseMCPTool {

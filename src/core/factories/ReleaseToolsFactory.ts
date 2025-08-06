@@ -16,7 +16,6 @@ export class ReleaseToolsFactory {
         this.createGenerateReleaseNotesTool(),
         this.createBoardBasedReleaseNotesTool(), // New tool
         this.createCreateReleaseWorkflowTool(),
-        this.createComprehensiveSprintReportTool(),
         this.createPreviewReleaseNotesTool(),
         this.createPublishToConfluenceTool(),
         this.createComprehensiveWorkflowTool()
@@ -759,6 +758,9 @@ export class ReleaseToolsFactory {
     })(this.services, this.toolInstances);
   }
 
+  /* REMOVED: createComprehensiveSprintReportTool() method
+   * This tool has been removed per user request to eliminate the generate_comprehensive_sprint_report functionality
+   *
   private createComprehensiveSprintReportTool(): MCPTool {
     return new (class extends BaseMCPTool {
       name = "generate_comprehensive_sprint_report";
@@ -938,4 +940,5 @@ export class ReleaseToolsFactory {
       }
     })(this.services, this.toolInstances);
   }
+  */ // END REMOVED SECTION
 }
