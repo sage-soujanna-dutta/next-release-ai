@@ -686,9 +686,6 @@ ${sprintGoals.map(goal =>
   `| ${goal.priority} | ${goal.goal} | ${goal.criteria} | ${goal.status} | ${goal.progress} |`
 ).join('\n')}
 
-### 📋 Sprint Focus Areas
-${this.generateFocusAreas(epics, stories, bugs, tasks)}
-
 </details>`;
   }
 
@@ -762,38 +759,6 @@ ${this.generateFocusAreas(epics, stories, bugs, tasks)}
     });
     
     return goals;
-  }
-
-  private generateFocusAreas(epics: JiraIssue[], stories: JiraIssue[], bugs: JiraIssue[], tasks: JiraIssue[]): string {
-    const focusAreas = [];
-    
-    // Primary development focus
-    if (stories.length > 0) {
-      const priorityStories = stories.filter(story => 
-        story.fields.priority && ['Highest', 'High'].includes(story.fields.priority.name)
-      ).length;
-      focusAreas.push(`**Feature Development**: ${stories.length} user stories (${priorityStories} high priority)`);
-    }
-    
-    // Technical debt and maintenance
-    if (tasks.length > 0) {
-      focusAreas.push(`**Technical Tasks**: ${tasks.length} infrastructure and maintenance items`);
-    }
-    
-    // Bug fixes and quality
-    if (bugs.length > 0) {
-      const criticalBugs = bugs.filter(bug => 
-        bug.fields.priority && ['Highest', 'High'].includes(bug.fields.priority.name)
-      ).length;
-      focusAreas.push(`**Quality Assurance**: ${bugs.length} bug fixes (${criticalBugs} critical)`);
-    }
-    
-    // Epic progression
-    if (epics.length > 0) {
-      focusAreas.push(`**Epic Advancement**: Progress on ${epics.length} major initiative(s)`);
-    }
-    
-    return focusAreas.length > 0 ? focusAreas.join('\n- ') : '- **General Development**: Completing planned sprint commitments';
   }
 
   private getProgressEmoji(percentage: number): string {
