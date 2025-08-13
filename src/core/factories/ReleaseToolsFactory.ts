@@ -113,6 +113,14 @@ export class ReleaseToolsFactory {
           includeTeamsNotification: {
             type: "boolean",
             description: "Send notification to Teams channel (default: false)"
+          },
+          releaseTag: {
+            type: "string",
+            description: "Specific release tag to fetch commits from (e.g., 'v1.19.0')"
+          },
+          githubRepository: {
+            type: "string", 
+            description: "Override GitHub repository for commit fetching (e.g., 'Sage/network-directory-service')"
           }
         },
         required: ["boardId", "sprintNumber"]
@@ -219,25 +227,40 @@ export class ReleaseToolsFactory {
               debugInfo.push(`DEBUG - GitHubService found in registry`);
             }
             
-            if (githubService && targetSprint.startDate && targetSprint.endDate) {
-              console.log(`🔄 Fetching GitHub commits for sprint period...`);
-              debugInfo.push(`DEBUG - Sprint dates: ${targetSprint.startDate} to ${targetSprint.endDate}`);
-              commits = await githubService.fetchCommitsForDateRange(
-                targetSprint.startDate,
-                targetSprint.endDate
-              );
-              console.log(`📊 Found ${commits.length} commits during sprint period`);
-              debugInfo.push(`DEBUG - Found ${commits.length} commits during sprint period`);
+            if (githubService) {
+              // Check if release tag is specified
+              if (args.releaseTag) {
+                console.log(`🏷️ Fetching GitHub commits from branch/tag: ${args.releaseTag}...`);
+                debugInfo.push(`DEBUG - Using branch/tag: ${args.releaseTag}`);
+                debugInfo.push(`DEBUG - Repository override: ${args.githubRepository || 'using default'}`);
+                
+                commits = await githubService.fetchCommitsFromBranchOrTag(
+                  args.releaseTag,
+                  args.githubRepository
+                );
+                console.log(`📊 Found ${commits.length} commits from branch/tag ${args.releaseTag}`);
+                debugInfo.push(`DEBUG - Found ${commits.length} commits from branch/tag ${args.releaseTag}`);
+              } else if (targetSprint.startDate && targetSprint.endDate) {
+                console.log(`🔄 Fetching GitHub commits for sprint period...`);
+                debugInfo.push(`DEBUG - Sprint dates: ${targetSprint.startDate} to ${targetSprint.endDate}`);
+                commits = await githubService.fetchCommitsForDateRange(
+                  targetSprint.startDate,
+                  targetSprint.endDate
+                );
+                console.log(`📊 Found ${commits.length} commits during sprint period`);
+                debugInfo.push(`DEBUG - Found ${commits.length} commits during sprint period`);
+              } else {
+                console.log(`🔄 Fetching recent GitHub commits...`);
+                commits = await githubService.fetchCommits();
+                console.log(`📊 Found ${commits.length} recent commits`);
+                debugInfo.push(`DEBUG - Found ${commits.length} recent commits (fallback)`);
+              }
+              
               if (commits.length > 0) {
                 const uniqueContributors = [...new Set(commits.map((c: any) => c.author))];
                 debugInfo.push(`DEBUG - Unique contributors: ${uniqueContributors.length}`);
                 debugInfo.push(`DEBUG - Contributors: ${uniqueContributors.slice(0, 5).join(', ')}`);
               }
-            } else if (githubService) {
-              console.log(`🔄 Fetching recent GitHub commits...`);
-              commits = await githubService.fetchCommits();
-              console.log(`📊 Found ${commits.length} recent commits`);
-              debugInfo.push(`DEBUG - Found ${commits.length} recent commits (fallback)`);
             } else {
               console.log(`⚠️ GitHubService not available`);
               debugInfo.push(`DEBUG - GitHubService not available`);
@@ -283,7 +306,7 @@ export class ReleaseToolsFactory {
           if (format === 'markdown') {
             content = this.generateMarkdownReport(sprintData);
           } else {
-            content = this.generateHTMLReport(sprintData);
+            content = await this.generateHTMLReport(sprintData);
           }
 
           fs.writeFileSync(filePath, content, 'utf8');
@@ -430,9 +453,51 @@ export class ReleaseToolsFactory {
         return formatter.format(jiraIssues, commits, sprintName, sprintDetails);
       }
 
-      private generateHTMLReport(data: any): string {
-        // Implementation for HTML format (simplified for now)
-        return `<!DOCTYPE html>
+      private async generateHTMLReport(data: any): Promise<string> {
+        // Use HtmlFormatter for professional sprint report format
+        try {
+          // Import HtmlFormatter dynamically
+          const { HtmlFormatter } = await import('../../utils/HtmlFormatter.js');
+          const htmlFormatter = new HtmlFormatter('modern');
+          
+          // Convert sprint data to format expected by HtmlFormatter
+          const jiraIssues = data.issues || [];
+          const commits = data.commits || [];
+          const sprintName = data.sprint.name;
+          
+          // Create build pipeline data structure that matches HtmlFormatter expectations
+          const buildPipelineArray = [{
+            sprintInfo: {
+              name: data.sprint.name,
+              id: data.sprint.id,
+              state: data.sprint.state,
+              startDate: data.sprint.startDate,
+              endDate: data.sprint.endDate,
+              completeDate: data.sprint.completeDate,
+              goal: data.sprint.goal
+            },
+            projectName: data.project.name,
+            totalIssues: jiraIssues.length,
+            completedIssues: data.stats.completed,
+            completionRate: data.stats.completionRate,
+            totalStoryPoints: data.stats.totalStoryPoints,
+            analysis: {
+              workBreakdown: {},
+              priorityStatus: {}
+            },
+            metrics: {
+              completionRate: data.stats.completionRate,
+              totalIssues: jiraIssues.length,
+              completedIssues: data.stats.completed
+            }
+          }];
+          
+          return htmlFormatter.format(jiraIssues, commits, sprintName, buildPipelineArray);
+        } catch (error: any) {
+          console.warn(`⚠️ HtmlFormatter failed, using fallback: ${error.message}`);
+          
+          // Fallback to simple HTML format if HtmlFormatter fails
+          return `<!DOCTYPE html>
 <html>
 <head>
     <title>Sprint Report: ${data.sprint.name}</title>
@@ -465,6 +530,7 @@ export class ReleaseToolsFactory {
     }).join('')}
 </body>
 </html>`;
+        }
       }
 
       private generateTeamsMessage(data: any, filename: string): string {
