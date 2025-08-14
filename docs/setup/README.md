@@ -10,7 +10,6 @@ This directory contains essential guides for setting up and configuring the Next
 
 ### Configuration
 - **[Automation Guide](./AUTOMATION_GUIDE.md)** - Complete automation setup and configuration
-- **[Claude Desktop Config](./CLAUDE_DESKTOP_CONFIG.md)** - Claude Desktop integration setup
 - **[Security Setup](./SECURITY-SETUP.md)** - Security configuration and best practices
 
 ### Deployment

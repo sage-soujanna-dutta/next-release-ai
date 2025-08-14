@@ -6,11 +6,6 @@ This directory contains reusable templates and architectural patterns used throu
 
 ### Sprint Report Templates
 - **[Standard Sprint Report Template](./STANDARD_SPRINT_REPORT_TEMPLATE.md)** - Standard sprint reporting template with JIRA integration
-- **[Enhanced Template Summary](./ENHANCED_TEMPLATE_SUMMARY.md)** - Enhanced template features and improvements
-
-### Architectural Patterns
-- **[Factory Pattern Summary](./FACTORY_PATTERN_SUMMARY.md)** - Factory pattern implementation for template creation
-- **[Template vs Service Comparison](./TEMPLATE_VS_SERVICE_COMPARISON.md)** - Architecture comparison and decision guide
 
 ## 🏗️ Template Architecture
 

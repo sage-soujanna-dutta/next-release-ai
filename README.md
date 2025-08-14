@@ -24,7 +24,7 @@ Transform your release process with AI-powered automation that combines JIRA iss
 git clone <your-repo>
 cd next-release-ai
 npm install
-cp .env.example .env  # Configure your API tokens
+# Configure your environment - see docs/setup/README_SETUP.md
 ```
 
 ### 2. Start the MCP Server

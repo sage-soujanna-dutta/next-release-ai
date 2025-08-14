@@ -5,24 +5,16 @@ This directory contains comprehensive user guides and how-to documentation for u
 ## 📚 Available Guides
 
 ### MCP Server Documentation
-- **[MCP Server Usage Guide](./MCP_SERVER_USAGE_GUIDE.md)** - Complete MCP server documentation
-- **[How to Use MCP Server](./HOW_TO_USE_MCP_SERVER.md)** - Basic usage instructions
-- **[How to Utilize MCP Server](./HOW_TO_UTILIZE_MCP_SERVER.md)** - Advanced utilization techniques
+- **[How to Utilize MCP Server](./HOW_TO_UTILIZE_MCP_SERVER.md)** - Advanced MCP server utilization techniques
 - **[MCP Commands](./MCP_COMMANDS.md)** - Available MCP commands reference
 - **[MCP Sprint Reports Guide](./MCP_SPRINT_REPORTS_GUIDE.md)** - Sprint reporting with MCP
 
-### Sprint & Release Management
-- **[Sprint Report Quick Reference](./SPRINT_REPORT_QUICK_REFERENCE.md)** - Quick reference for sprint reports
+### Release Management
 - **[Release Workflow Guide](./RELEASE_WORKFLOW_GUIDE.md)** - End-to-end release process
-- **[How to Get Top Contributors](./HOW_TO_GET_TOP_CONTRIBUTORS.md)** - Contributor analysis guide
-
-### Teams Integration
-- **[Teams Template System Guide](./TEAMS_TEMPLATE_SYSTEM_GUIDE.md)** - Teams notification system
-- **[Professional Presentation Guide](./PROFESSIONAL_PRESENTATION_GUIDE.md)** - Creating professional reports
+- **[Board Based Release Notes Guide](./BOARD_BASED_RELEASE_NOTES_GUIDE.md)** - Board-based release notes generation
 
 ### Development Integration
 - **[GitHub Copilot Integration](./GITHUB_COPILOT_INTEGRATION.md)** - Copilot integration setup
-- **[GitHub Copilot Ready](./GITHUB_COPILOT_READY.md)** - Copilot readiness guide
 
 ## 🎯 Usage Workflows
 

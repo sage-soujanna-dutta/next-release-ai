@@ -4,29 +4,10 @@ This directory contains project summaries, feature documentation, and general re
 
 ## 📚 Available Summaries
 
-### Project Overview
-- **[Build Summary](./BUILD_SUMMARY.md)** - Build process overview and architecture
-- **[Consolidation Summary](./CONSOLIDATION_SUMMARY.md)** - Project consolidation and integration
-- **[Documentation Summary](./DOCUMENTATION_SUMMARY.md)** - Documentation structure and coverage
-- **[Project Showcase](./project-showcase.md)** - Project demonstration and capabilities
-
-### Technical Features
-- **[Enhanced JIRA Tools](./ENHANCED_JIRA_TOOLS.md)** - JIRA integration enhancements and features
-- **[Enhanced Teams Layout Summary](./ENHANCED_TEAMS_LAYOUT_SUMMARY.md)** - Teams interface improvements
-- **[MCP Server Utilization Summary](./MCP_SERVER_UTILIZATION_SUMMARY.md)** - MCP server usage and optimization
-- **[MCP Tools Integration](./MCP_TOOLS_INTEGRATION.md)** - MCP tools and integration patterns
-
-### Reporting & Notifications
-- **[Professional Sprint Reports Summary](./PROFESSIONAL_SPRINT_REPORTS_SUMMARY.md)** - Sprint reporting capabilities
-- **[Teams Notifications Summary](./TEAMS_NOTIFICATIONS_SUMMARY.md)** - Teams notification system overview
-- **[Teams Service Professional Default](./TEAMS_SERVICE_PROFESSIONAL_DEFAULT.md)** - Professional Teams service configuration
-
-### Specialized Features
-- **[Stakeholder Release Notes Documentation](./STAKEHOLDER_RELEASE_NOTES_DOCUMENTATION.md)** - Release notes for stakeholders
-- **[PDF Report Generator Code Review](./PDF_REPORT_GENERATOR_CODE_REVIEW.md)** - PDF generation system review
-- **[HTML Attachment Solution Summary](./HTML_ATTACHMENT_SOLUTION_SUMMARY.md)** - HTML attachment handling
-- **[HTML Report Teams Summary](./HTML_REPORT_TEAMS_SUMMARY.md)** - HTML reporting for Teams
-- **[Most Accurate Contributor Analysis Complete](./MOST_ACCURATE_CONTRIBUTOR_ANALYSIS_COMPLETE.md)** - Advanced contributor analysis
+### Project Overview & Tools
+- **[Project Showcase](./project-showcase.md)** - Comprehensive project demonstration and capabilities
+- **[MCP Tools List](./MCP_TOOLS_LIST.md)** - Complete list of 23+ MCP tools with descriptions and usage examples
+- **[Enhanced JIRA Tools](./ENHANCED_JIRA_TOOLS.md)** - JIRA integration enhancements, capabilities, and advanced analytics
 
 ## 🎯 Summary Categories
 
@@ -67,9 +48,9 @@ User interface and experience improvements and enhancements.
 ## 🔍 How to Use Summaries
 
 ### For New Team Members
-1. Start with [Project Showcase](./project-showcase.md) for overview
-2. Read [Build Summary](./BUILD_SUMMARY.md) for architecture understanding
-3. Review relevant technical summaries for your area of focus
+1. Start with [Project Showcase](./project-showcase.md) for comprehensive overview
+2. Review [MCP Tools List](./MCP_TOOLS_LIST.md) for available tools and capabilities  
+3. Deep dive into [Enhanced JIRA Tools](./ENHANCED_JIRA_TOOLS.md) for JIRA integration details
 
 ### For Stakeholders
 - Focus on project summaries for high-level understanding
