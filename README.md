@@ -117,7 +117,7 @@ You can use the following natural language commands in VS Code Copilot, Claude D
 - First validate my configuration, then generate release notes for sprint SCNT-2025-20, and finally publish to Confluence
 - Analyze story points for the last 3 sprints, and if completion rate is below 80%, also run risk assessment
 
-For more, see your `MCP_COMMANDS.md` for the full reference and advanced usage!
+For more, see [docs/guides/MCP_COMMANDS.md](docs/guides/MCP_COMMANDS.md) for the full reference and advanced usage!
 
 ## 🛠️ **Core Capabilities**
 
@@ -151,45 +151,60 @@ For more, see your `MCP_COMMANDS.md` for the full reference and advanced usage!
 | `fetch_jira_issues` | Raw data access | Direct JIRA queries |
 | `fetch_github_commits` | Raw commit data | Date-based filtering |
 
-## 📚 **Documentation Guide**
+## 📚 **Complete Documentation**
 
+For detailed guides, troubleshooting, and advanced features, visit our organized knowledge base:
+
+### 🗂️ [Documentation Hub](./docs/README.md)
+- **[Setup & Configuration](./docs/setup/README.md)** - Installation, security, and deployment guides  
+- **[User Guides](./docs/guides/README.md)** - Step-by-step instructions and workflows
+- **[Templates](./docs/templates/README.md)** - Reusable templates and patterns
+- **[Tool References](./docs/summaries/README.md)** - Complete tool listings and capabilities
+
+### 📖 **Quick Reference**
 | Document | Purpose | When to Use |
 |----------|---------|-------------|
 | 📖 **[Quick Start Guide](#quick-start-2-minutes)** | Get running fast | First time setup |
-| 🛠️ **[MCP Commands Guide](./MCP_COMMANDS.md)** | Complete command reference | Learning all capabilities |
-| 🔧 **[JIRA Tools Guide](./ENHANCED_JIRA_TOOLS.md)** | Advanced JIRA features | Complex analysis needs |
-| 🤖 **[Automation Guide](./AUTOMATION_GUIDE.md)** | GitHub Actions setup | CI/CD integration |
-| 💬 **[Teams Integration](./TEAMS_VALIDATION_REPORT.md)** | Teams notifications | Team collaboration |
-| 🚀 **[Project Showcase](./project-showcase.md)** | Full feature demo | Understanding capabilities |
+| 🛠️ **[MCP Commands Guide](./docs/guides/MCP_COMMANDS.md)** | Complete command reference | Learning all capabilities |
+| 🔧 **[JIRA Tools Guide](./docs/summaries/ENHANCED_JIRA_TOOLS.md)** | Advanced JIRA features | Complex analysis needs |
+| 🤖 **[Automation Guide](./docs/setup/AUTOMATION_GUIDE.md)** | GitHub Actions setup | CI/CD integration |
+| 🚀 **[Project Showcase](./docs/summaries/project-showcase.md)** | Full feature demo | Understanding capabilities |
 
 ## 🏗️ **Architecture Overview**
 
 ```
-📦 Release MCP Server
+📦 Next Release AI - MCP Server
 ├── 🧠 MCP Server Core (src/index.ts)
-│   ├── 🔧 13 AI-Accessible Tools
+│   ├── 🔧 23+ AI-Accessible Tools
 │   └── 🎯 VS Code Copilot Integration
 ├── 🏢 Services Layer
 │   ├── 📋 JIRA Service (Enhanced Analytics)
 │   ├── 🐙 GitHub Service (Commit Analysis)  
 │   ├── 📝 Confluence Service (Publishing)
-│   ├── 💬 Teams Service (Notifications)
+│   ├── 💬 Teams Service (Professional Templates)
 │   └── 📁 File Service (Export Management)
-├── 🎨 Formatters
-│   ├── 🌐 HTML Formatter (3 Themes)
-│   └── 📄 Markdown Formatter  
-└── 🔍 Advanced Analytics
-    ├── 📊 JIRA Extractor (Deep Data Mining)
-    └── 🎯 JIRA Analyzer (Insights Engine)
+├── 🎨 Report Generation
+│   ├── 🌐 HTML Generator (Professional Themes)
+│   ├── 📄 PDF Generator (Multi-format)
+│   └── 📋 Markdown Formatter (Clean Output)
+├── 🔍 Advanced Analytics
+│   ├── 📊 JIRA Extractor (Deep Data Mining)
+│   ├── 🎯 JIRA Analyzer (Risk Assessment)
+│   └── 👥 Contributors Analyzer (Team Insights)
+└── 📚 Documentation (Organized Knowledge Base)
+    ├── 🔧 Setup & Configuration Guides
+    ├── 📋 User Guides & Workflows  
+    ├── 🎨 Templates & Patterns
+    └── 📊 Tool References & Summaries
 ```
-- **`sprint_summary_report`**: Comprehensive sprint summaries with team metrics
 
-### Release Management Tools
-- **`generate_release_notes`**: Generate formatted release notes from JIRA and GitHub
-- **`confluence_release_notes`**: Generate and publish release notes to Confluence
-- **`complete_release_process`**: End-to-end release notes generation and distribution
+### 🚀 **Core Capabilities**
+- **23+ MCP Tools**: Complete release management automation
+- **Professional Reporting**: HTML, PDF, and Teams-native formats
+- **Advanced Analytics**: Risk assessment, velocity tracking, contributor insights
+- **Enterprise Ready**: Error handling, validation, and comprehensive documentation
 
-See [ENHANCED_JIRA_TOOLS.md](./ENHANCED_JIRA_TOOLS.md) for detailed JIRA tools documentation and [MCP_COMMANDS.md](./MCP_COMMANDS.md) for complete tool reference.
+See [docs/summaries/ENHANCED_JIRA_TOOLS.md](./docs/summaries/ENHANCED_JIRA_TOOLS.md) for detailed JIRA tools documentation and [docs/guides/MCP_COMMANDS.md](./docs/guides/MCP_COMMANDS.md) for complete tool reference.
 
 ## ⚙️ **Complete Configuration Guide**
 
@@ -556,7 +571,7 @@ npm run dev            # Start server in watch mode
 
 ## 🤖 **GitHub Actions Automation**
 
-Your project includes enterprise-grade automation. See **[Automation Guide](./AUTOMATION_GUIDE.md)** for complete setup.
+Your project includes enterprise-grade automation. See **[Automation Guide](./docs/setup/AUTOMATION_GUIDE.md)** for complete setup.
 
 ### **Quick Setup**
 1. **Add Secrets**: Configure repository secrets for API tokens
@@ -590,13 +605,24 @@ on:
 
 ## 🔗 **Related Documentation**
 
+### 📚 **Essential Guides**
 | 📚 **Complete Guide** | 🎯 **Purpose** |
 |----------------------|----------------|
-| **[MCP Commands Reference](./MCP_COMMANDS.md)** | Detailed command documentation with examples |
-| **[Enhanced JIRA Tools](./ENHANCED_JIRA_TOOLS.md)** | Advanced JIRA analytics and insights |
-| **[Automation Guide](./AUTOMATION_GUIDE.md)** | GitHub Actions and CI/CD setup |
-| **[Teams Integration](./TEAMS_VALIDATION_REPORT.md)** | Microsoft Teams notifications setup |
-| **[Project Showcase](./project-showcase.md)** | Full feature demonstration |
+| **[Documentation Hub](./docs/README.md)** | Central knowledge base and navigation |
+| **[MCP Commands Reference](./docs/guides/MCP_COMMANDS.md)** | Detailed command documentation with examples |
+| **[Enhanced JIRA Tools](./docs/summaries/ENHANCED_JIRA_TOOLS.md)** | Advanced JIRA analytics and insights |
+| **[Automation Guide](./docs/setup/AUTOMATION_GUIDE.md)** | GitHub Actions and CI/CD setup |
+| **[Project Showcase](./docs/summaries/project-showcase.md)** | Full feature demonstration |
+
+### 🔧 **Setup & Configuration**
+- **[Quick Start](./docs/setup/QUICK_START.md)** - Get running in minutes
+- **[Security Setup](./docs/setup/SECURITY-SETUP.md)** - Security configuration and best practices  
+- **[Deployment Guide](./docs/setup/DEPLOYMENT_GUIDE.md)** - Production deployment instructions
+
+### 📋 **User Guides**
+- **[MCP Server Usage](./docs/guides/HOW_TO_UTILIZE_MCP_SERVER.md)** - Advanced server utilization
+- **[Release Workflow](./docs/guides/RELEASE_WORKFLOW_GUIDE.md)** - End-to-end release process
+- **[GitHub Copilot Integration](./docs/guides/GITHUB_COPILOT_INTEGRATION.md)** - AI-powered workflows
 
 ## 🤝 **Contributing**
 
@@ -619,140 +645,97 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🎉 **What's Next?**
 
-1. **Try the Quick Start** - Get running in 2 minutes
-2. **Explore Advanced Features** - Check out JIRA analytics tools
-3. **Set Up Automation** - Configure GitHub Actions
-4. **Customize Output** - Try different themes and formats
-5. **Integrate with Teams** - Set up notifications
+1. **🚀 [Quick Start](docs/setup/QUICK_START.md)** - Get running in 2 minutes
+2. **📊 [Explore Tools](docs/summaries/MCP_TOOLS_LIST.md)** - Discover all 23+ available tools
+3. **🔧 [Advanced JIRA Features](docs/summaries/ENHANCED_JIRA_TOOLS.md)** - Deep analytics and insights
+4. **🤖 [Set Up Automation](docs/setup/AUTOMATION_GUIDE.md)** - Configure GitHub Actions
+5. **📚 [Browse Documentation](docs/README.md)** - Explore the complete knowledge base
 
 ---
 
-> **💡 Pro Tip**: Use VS Code Copilot's natural language interface - it's designed to understand context and handle complex workflows automatically!
+> **💡 Pro Tip**: Use VS Code Copilot's natural language interface - it's designed to understand context and handle complex workflows automatically! Start with our [MCP Commands Guide](docs/guides/MCP_COMMANDS.md) for examples.
 
-### Modern Theme (Default)
-- Gradient headers with modern colors
-- Card-based layout with shadows
-- Responsive design
-- Rich typography and spacing
+## 🔧 **Development & Architecture**
 
-### Minimal Theme
-- Clean, simple design
-- Monochromatic color scheme
-- Minimal visual elements
-- Focus on content
-
-### Default Theme
-- Classic blue color scheme
-- Standard layout
-- Professional appearance
-
-## 📄 Output Examples
-
-### HTML Output Features
-- 📊 Interactive summary with statistics
-- 🎯 Issue categorization by type and status
-- 🔗 Direct links to JIRA issues and GitHub commits
-- 👤 Assignee and author information
-- 🎨 Priority indicators and status badges
-- 📱 Responsive design for mobile viewing
-
-### Markdown Output Features
-- Clean, readable format
-- Emoji indicators for different types
-- Direct links to issues and commits
-- Summary statistics
-- Structured hierarchy
-
-## 🔧 Development
-
-### Project Structure
+### 📁 **Project Structure**
 ```
-src/
-├── index.ts              # Main MCP server
-├── cli.ts                # CLI interface
-├── services/             # Core services
-│   ├── JiraService.ts    # JIRA API integration
-│   ├── GitHubService.ts  # GitHub API integration
-│   ├── ConfluenceService.ts # Confluence publishing
-│   ├── TeamsService.ts   # Teams notifications
-│   ├── FileService.ts    # File operations
-│   └── ReleaseNotesService.ts # Main orchestration
-└── utils/                # Utilities
-    ├── HtmlFormatter.ts  # HTML generation
-    └── MarkdownFormatter.ts # Markdown generation
+next-release-ai/
+├── 📚 docs/                    # 📖 Organized Documentation
+│   ├── setup/                  # 🔧 Setup & Configuration (5 guides)
+│   ├── guides/                 # 📋 User Guides & Workflows (6 guides)
+│   ├── templates/              # 🎨 Templates & Patterns (1 template)
+│   └── summaries/              # 📊 Tool References & Summaries (3 files)
+├── 🏗️ src/                     # 💻 Source Code
+│   ├── core/                   # 🧠 MCP Server Core & Factories
+│   ├── services/               # 🏢 Business Logic Services
+│   ├── tools/                  # 🔧 MCP Tool Implementations
+│   ├── generators/             # 🎨 Report Generators (HTML/PDF)
+│   └── utils/                  # 🛠️ Utilities & Formatters
+├── 📄 README.md                # 📖 Main Project Documentation
+├── 📦 package.json             # 📋 Dependencies & Scripts
+└── 🔨 tsconfig.json            # ⚙️ TypeScript Configuration
 ```
 
-### Build Commands
+### 🚀 **Build Commands**
 ```bash
-npm run build    # Compile TypeScript
-npm run dev      # Development mode with watch
-npm run start    # Run the built server
+npm run build        # 🔨 Compile TypeScript to JavaScript
+npm run dev          # 👨‍💻 Development mode with watch
+npm run mcp-server   # 🚀 Start MCP server for VS Code
+npm run start        # ▶️ Run the built server
 ```
 
-### Testing Configuration
+### 🧪 **Testing & Validation**
 ```bash
-npm run start validate  # Test all integrations
+npm run story-points    # 📊 Test JIRA integration
+npm run velocity        # 📈 Test analytics capabilities  
+npm run sprint-summary  # 📋 Test complete workflow
+# In VS Code Copilot: "validate configuration"
 ```
 
-## 🚨 Troubleshooting
+## 📋 **Requirements**
 
-### Common Issues
+### 🛠️ **Development Environment**
+- **Node.js 18+** - Runtime environment
+- **TypeScript 5+** - Language and compiler
+- **VS Code + GitHub Copilot** - Recommended development setup
 
-**Authentication Errors:**
-- Verify API tokens are correct and not expired
-- Check that tokens have required permissions
-- Ensure domain names are correct (without https://)
+### 🔑 **API Access**  
+- **JIRA Cloud** - Sprint and issue management
+- **GitHub** - Repository and commit access
+- **Confluence Cloud** (optional) - Documentation publishing
+- **Microsoft Teams** (optional) - Team notifications
 
-**Sprint Not Found:**
-- Verify the sprint number format matches your JIRA setup
-- Check the board ID is correct
-- Ensure the sprint exists and is accessible
+## 🤝 **Contributing**
 
-**GitHub Rate Limits:**
-- Use a personal access token instead of basic auth
-- Check your token permissions include `repo` scope
+1. **Fork the repository** and clone your fork
+2. **Create feature branch**: `git checkout -b feature/amazing-feature`
+3. **Follow the docs structure**: Add documentation to appropriate `docs/` subdirectory
+4. **Test your changes**: Use validation commands to ensure functionality
+5. **Commit changes**: `git commit -m 'feat: add amazing feature'`
+6. **Push to branch**: `git push origin feature/amazing-feature`
+7. **Open Pull Request** with clear description
 
-**Confluence Publishing Fails:**
-- Verify space key is correct and accessible
-- Check username and PAT combination
-- Ensure you have write permissions to the space
+## 📄 **License**
 
-### Debug Mode
+This project is licensed under the **MIT License** - see the LICENSE file for details.
 
-Set environment variable for verbose logging:
-```bash
-DEBUG=true npm run start [command]
-```
+## 🆘 **Support & Troubleshooting**
 
-## 📋 Requirements
+### 📖 **Documentation First**
+1. **[Complete Knowledge Base](docs/README.md)** - Start here for all documentation
+2. **[Setup Guides](docs/setup/README.md)** - Installation and configuration help
+3. **[User Guides](docs/guides/README.md)** - Step-by-step workflows and tutorials
 
-- Node.js 18+
-- TypeScript 5+
-- JIRA Cloud access
-- GitHub repository access
-- Confluence Cloud access (optional)
-- Microsoft Teams webhook (optional)
+### 🔧 **Common Issues**  
+- **Configuration Problems**: Check [Setup Guides](docs/setup/README.md)
+- **API Errors**: Review [Security Setup](docs/setup/SECURITY-SETUP.md)  
+- **Tool Usage**: Consult [MCP Commands Guide](docs/guides/MCP_COMMANDS.md)
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests if applicable
-5. Submit a pull request
-
-## 📄 License
-
-MIT License - see LICENSE file for details.
-
-## 🆘 Support
-
-For issues and questions:
-1. Check the troubleshooting section above
-2. Review environment variable configuration
-3. Test with the validate command
-4. Create an issue with full error details
+### 🐛 **Still Need Help?**
+- **GitHub Issues**: Create an issue with full error details
+- **GitHub Discussions**: Ask questions and share experiences
+- **Validation Command**: In VS Code Copilot: "validate configuration"
 
 ---
 
-**Happy Release Notes Generation! 🚀**
+> **💡 Ready to Transform Your Release Process?** Start with our [Quick Start Guide](docs/setup/QUICK_START.md) and discover the power of AI-automated release management! 🚀
