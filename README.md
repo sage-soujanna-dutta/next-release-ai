@@ -60,7 +60,7 @@ npx tsx scripts/generate-sprint-report.ts --sprint SCNT-2025-22 --format html --
 
 ### 3. Use with VS Code Copilot
 Open VS Code and use natural language commands:
-- *"Generate release notes for sprint SCNT-2025-20"*
+- *"generate sprint report of SCNT-2025-23 sprint of "Sage Connect" in html format and use "SNA/Release-sprint-2025-23" branch from "sage-connect" repo for commits information "*
 - *"Analyze story points across the last 3 sprints"*  
 - *"Create a velocity report and send to Teams"*
 - *"Assess risks for tickets in my current sprint"*
