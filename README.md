@@ -669,7 +669,6 @@ next-release-ai/
 │   ├── core/                   # 🧠 MCP Server Core & Factories
 │   ├── services/               # 🏢 Business Logic Services
 │   ├── tools/                  # 🔧 MCP Tool Implementations
-│   ├── generators/             # 🎨 Report Generators (HTML/PDF)
 │   └── utils/                  # 🛠️ Utilities & Formatters
 ├── 📄 README.md                # 📖 Main Project Documentation
 ├── 📦 package.json             # 📋 Dependencies & Scripts

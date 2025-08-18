@@ -926,38 +926,8 @@ export class ReleaseToolsFactory {
             fs.mkdirSync(outputDir, { recursive: true });
           }
 
-          // Generate HTML report if requested
-          if (formats.includes('html') || formats.includes('both')) {
-            try {
-              const { SprintReportHTMLGenerator } = await import("../../generators/HTMLReportGenerator.js");
-              const htmlGenerator = new SprintReportHTMLGenerator();
-              
-              const htmlPath = path.join(outputDir, `${args.sprintNumber}_report_${timestamp}.html`);
-              console.log('🧪 About to generate HTML...');
-              const htmlContent = htmlGenerator.generateHTML(sprintData);
-              fs.writeFileSync(htmlPath, htmlContent, 'utf8');
-              generatedFiles.push(htmlPath);
-              console.log(`✅ HTML report generated: ${htmlPath}`);
-            } catch (htmlError: any) {
-              console.error('❌ HTML generation error:', htmlError.message);
-              throw new Error(`HTML generation failed: ${htmlError.message}`);
-            }
-          }
-
-          // Generate PDF report if requested  
-          if (formats.includes('pdf') || formats.includes('both')) {
-            const { SprintReportPDFGenerator } = await import("../../generators/PDFReportGenerator.js");
-            const pdfGenerator = new SprintReportPDFGenerator();
-            
-            const pdfPath = path.join(outputDir, `${args.sprintNumber}_report_${timestamp}.pdf`);
-            const pdfConfig = {
-              format: config.pdfFormat || 'A4',
-              orientation: 'portrait' as const,
-              includeCharts: config.includeCharts !== false,
-              theme: config.theme || 'professional'
-            };
-            
-            await pdfGenerator.generatePDF(sprintData, pdfPath, pdfConfig);
+          console.log('ℹ️ HTML and PDF generation functionality has been removed');
+          console.log('✅ Report data processing completed successfully');
             generatedFiles.push(pdfPath);
             console.log(`✅ PDF report generated: ${pdfPath}`);
           }
