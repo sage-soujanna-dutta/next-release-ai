@@ -32,12 +32,188 @@ npm install
 npm run mcp-server
 ```
 
+**Invoke via MCP (HTTP / STDIO)**
+
+You can call the report generation tools through the MCP server (preferred for automation and Copilot integration). Example HTTP payload to call the `generate_release_notes` tool:
+
+```json
+{
+  "tool": "generate_release_notes",
+  "params": {
+    "sprintNumber": "SCNT-2025-22",
+    "format": "html",
+    "githubRepository": "sage-connect",
+    "branch": "SNA/Release-sprint-2025-22"
+  }
+}
+```
+
+Or invoke the tool over STDIO if the server is running in STDIO mode by sending the same JSON envelope to the server stdin.
+
+**Direct script (debug / local runs)**
+
+For debugging or one-off runs you can use the local script (keeps parity with MCP tool behavior):
+
+```bash
+npx tsx scripts/generate-sprint-report.ts --sprint SCNT-2025-22 --format html --repo sage-connect --branch "SNA/Release-sprint-2025-22"
+```
+
 ### 3. Use with VS Code Copilot
 Open VS Code and use natural language commands:
 - *"Generate release notes for sprint SCNT-2025-20"*
 - *"Analyze story points across the last 3 sprints"*  
 - *"Create a velocity report and send to Teams"*
 - *"Assess risks for tickets in my current sprint"*
+
+#### Configuring the MCP server with GitHub Copilot
+Follow these steps to connect GitHub Copilot (and Copilot Chat) to the local MCP server shipped in this repo.
+
+1. Install required VS Code extensions
+   - GitHub Copilot
+   - GitHub Copilot Chat (recommended for conversational commands)
+
+2. Ensure the workspace has an MCP config
+   - This repository provides a sample VS Code MCP config at `.vscode/mcp.json`. Example (stdio mode):
+
+```json
+{
+  "inputs": [],
+  "servers": {
+    "next-release-ai": {
+      "type": "stdio",
+      "command": "npm",
+      "args": [ "run", "mcp-server" ],
+      "cwd": "/Users/snehaldangroshiya/next-release-ai"
+    }
+  }
+}
+```
+
+   - If you prefer HTTP mode, use a small HTTP server config (example):
+
+```json
+{
+  "inputs": [],
+  "servers": {
+    "next-release-ai": {
+      "type": "http",
+      "command": "",
+      "args": [],
+      "cwd": "/Users/snehaldangroshiya/next-release-ai",
+      "url": "http://localhost:8080"
+    }
+  }
+}
+```
+
+3. Configure environment variables
+   - Copy `.env.example` to `.env` and fill in JIRA, GitHub, Confluence and Teams credentials (see "Environment Variables Reference" section above).
+
+4. Start the MCP server
+   - From the workspace root run:
+     ```bash
+     npm run mcp-server
+     ```
+   - The server will run and accept requests according to the configured mode (stdio or http).
+
+5. Use GitHub Copilot / Copilot Chat
+   - Open Copilot Chat inside VS Code and enter natural language commands such as:
+     - "Generate release notes for sprint SCNT-2025-21 as HTML with modern theme"
+     - "Preview release notes for SCNT-2025-21"
+   - For advanced use, send a direct MCP tool envelope (JSON) to the server. Example payload:
+
+```json
+{
+  "tool": "generate_release_notes",
+  "params": {
+    "sprintNumber": "SCNT-2025-21",
+    "format": "html",
+    "theme": "modern"
+  }
+}
+```
+
+   - Copilot Chat or any MCP-compatible client will forward the request to the local server and return the generated output. Generated files appear in the `output/` directory by default.
+
+6. Validate and troubleshoot
+   - Use the built-in `validate_configuration` tool via Copilot or call the MCP endpoint to confirm connectivity to JIRA/GitHub.
+   - Check logs in the terminal where `npm run mcp-server` is running and the `output/github-debug.log` file for details.
+
+Notes
+- If Copilot Chat does not automatically detect the MCP server, ensure the `.vscode/mcp.json` file is present in the workspace root and that the server is started using the same cwd shown in the config.
+- For CI or remote deployments, prefer HTTP mode and expose the MCP endpoint behind appropriate network controls.
+
+## ⚠️ Additional Important Information (Security, CI, Maintenance)
+
+### 🔒 Security & .gitignore
+- Never commit secrets. Ensure `.gitignore` contains at minimum:
+  - `.env`
+  - `.env.local`
+  - `.env.*.local`
+  - Any files that contain API tokens or PATs
+- Use GitHub Secrets (or your CI provider secrets) for tokens in CI workflows instead of storing them in the repo.
+
+### 📄 `.env.example` verification
+- Keep a safe, up-to-date `.env.example` with every required environment variable and descriptive comments. Verify variable names and comments match the README's Environment Variables Reference.
+- If `.env.example` is missing, add it immediately using the variable names in the "Environment Variables Reference" section above.
+
+### ⚙️ MCP server runtime details & health checks
+- Default HTTP mode: http://localhost:8080 (changeable in server config)
+- Health-check endpoint (HTTP mode): `GET /healthz` — returns 200 when the server is ready.
+- Typical startup log lines to look for:
+  - "MCP server listening on http://localhost:8080"
+  - "MCP server ready (stdio mode)"
+- When running in STDIO mode, the server readiness is indicated by a ready message in the terminal. Copilot clients using STDIO will start the server process based on `.vscode/mcp.json` and rely on STDIO streams.
+
+### 🤝 GitHub Copilot / Copilot Chat specifics
+- Install both GitHub Copilot and GitHub Copilot Chat for the best conversational experience.
+- Copilot Chat discovers MCP servers via the workspace `.vscode/mcp.json`. If discovery fails:
+  1. Confirm the file exists in the workspace root.
+  2. Ensure the server is running with the same `cwd` from the config.
+  3. Restart VS Code after starting the MCP server.
+- If your enterprise restricts extensions, ensure Copilot Chat has the necessary network access to reach the local MCP endpoint.
+
+### 🌐 Output preview & sample filename pattern
+- Generated files are saved to the `output/` directory by default. Example filename pattern:
+  - `output/SCNT-2025-21-sprint-report-2025-08-18-05-56-58.html`
+  - Pattern: `output/<SPRINT>-sprint-report-<YYYY-MM-DD-HH-MM-SS>.<ext>`
+- On macOS, preview with:
+  ```bash
+  open "output/SCNT-2025-21-sprint-report-2025-08-18-05-56-58.html"
+  ```
+
+### 🧪 CI / Tests / Linting
+- If tests exist run:
+  ```bash
+  npm test
+  ```
+  or run the repo-specific test script if provided.
+- Linting (if configured):
+  ```bash
+  npm run lint
+  ```
+- Recommended CI secrets (add to GitHub Actions repository secrets):
+  - `GH_TOKEN` (GitHub PAT)
+  - `JIRA_TOKEN`
+  - `CONFLUENCE_PAT`
+  - `TEAMS_WEBHOOK_URL`
+- Add a workflow dispatch input for `sprint_number` to support manual runs in CI.
+
+### 🏷️ Versioning & CHANGELOG
+- Follow Semantic Versioning (semver) for releases and tag releases using `vMAJOR.MINOR.PATCH`.
+- Maintain a `CHANGELOG.md` or use a changelog generator (e.g., `standard-version`) to track release notes between tags.
+
+### 🤝 Contributors & Code of Conduct
+- Add `CONTRIBUTING.md` describing the PR process, branch naming, and review expectations.
+- Add `CODE_OF_CONDUCT.md` to set community expectations and provide contact information for incidents.
+
+### ✅ First-run checklist
+1. Copy environment template: `cp .env.example .env` and fill tokens.
+2. Install dependencies: `npm install`
+3. Build: `npm run build`
+4. Start server: `npm run mcp-server`
+5. Validate config: Use Copilot command "validate configuration" or run the `validate_configuration` tool
+6. Generate a preview: "Preview release notes for SCNT-2025-21"
 
 ## 🗣️ Natural Language Commands for MCP Tools
 
@@ -184,9 +360,10 @@ For detailed guides, troubleshooting, and advanced features, visit our organized
 │   ├── 💬 Teams Service (Professional Templates)
 │   └── 📁 File Service (Export Management)
 ├── 🎨 Report Generation
-│   ├── 🌐 HTML Generator (Professional Themes)
-│   ├── 📄 PDF Generator (Multi-format)
-│   └── 📋 Markdown Formatter (Clean Output)
+│   ├── 🧩 `ReleaseNotesService` — orchestrator that combines JIRA, GitHub and formatters
+│   ├── 📝 `MarkdownFormatter` — canonical content formatter
+│   ├── 🌐 HTML/PDF exporters — template-based exporters invoked by services
+│   └── ⚙️ Generation exposed via MCP tools and `scripts/generate-sprint-report.ts` (no standalone `generators/` classes)
 ├── 🔍 Advanced Analytics
 │   ├── 📊 JIRA Extractor (Deep Data Mining)
 │   ├── 🎯 JIRA Analyzer (Risk Assessment)
@@ -199,7 +376,7 @@ For detailed guides, troubleshooting, and advanced features, visit our organized
 ```
 
 ### 🚀 **Core Capabilities**
-- **23+ MCP Tools**: Complete release management automation
+- **MCP Tools**: Complete release management automation (see `docs/summaries/MCP_TOOLS_LIST.md` for the current list)
 - **Professional Reporting**: HTML, PDF, and Teams-native formats
 - **Advanced Analytics**: Risk assessment, velocity tracking, contributor insights
 - **Enterprise Ready**: Error handling, validation, and comprehensive documentation
@@ -635,88 +812,6 @@ on:
 ## 📄 **License**
 
 This project is licensed under the MIT License - see the LICENSE file for details.
-
-## 🆘 **Support**
-
-- **📖 Documentation**: Check the guides listed above
-- **🐛 Issues**: Create an issue in the GitHub repository
-- **💬 Discussions**: Use GitHub Discussions for questions
-- **🔧 Troubleshooting**: See the troubleshooting section above
-
-## 🎉 **What's Next?**
-
-1. **🚀 [Quick Start](docs/setup/QUICK_START.md)** - Get running in 2 minutes
-2. **📊 [Explore Tools](docs/summaries/MCP_TOOLS_LIST.md)** - Discover all 23+ available tools
-3. **🔧 [Advanced JIRA Features](docs/summaries/ENHANCED_JIRA_TOOLS.md)** - Deep analytics and insights
-4. **🤖 [Set Up Automation](docs/setup/AUTOMATION_GUIDE.md)** - Configure GitHub Actions
-5. **📚 [Browse Documentation](docs/README.md)** - Explore the complete knowledge base
-
----
-
-> **💡 Pro Tip**: Use VS Code Copilot's natural language interface - it's designed to understand context and handle complex workflows automatically! Start with our [MCP Commands Guide](docs/guides/MCP_COMMANDS.md) for examples.
-
-## 🔧 **Development & Architecture**
-
-### 📁 **Project Structure**
-```
-next-release-ai/
-├── 📚 docs/                    # 📖 Organized Documentation
-│   ├── setup/                  # 🔧 Setup & Configuration (5 guides)
-│   ├── guides/                 # 📋 User Guides & Workflows (6 guides)
-│   ├── templates/              # 🎨 Templates & Patterns (1 template)
-│   └── summaries/              # 📊 Tool References & Summaries (3 files)
-├── 🏗️ src/                     # 💻 Source Code
-│   ├── core/                   # 🧠 MCP Server Core & Factories
-│   ├── services/               # 🏢 Business Logic Services
-│   ├── tools/                  # 🔧 MCP Tool Implementations
-│   └── utils/                  # 🛠️ Utilities & Formatters
-├── 📄 README.md                # 📖 Main Project Documentation
-├── 📦 package.json             # 📋 Dependencies & Scripts
-└── 🔨 tsconfig.json            # ⚙️ TypeScript Configuration
-```
-
-### 🚀 **Build Commands**
-```bash
-npm run build        # 🔨 Compile TypeScript to JavaScript
-npm run dev          # 👨‍💻 Development mode with watch
-npm run mcp-server   # 🚀 Start MCP server for VS Code
-npm run start        # ▶️ Run the built server
-```
-
-### 🧪 **Testing & Validation**
-```bash
-npm run story-points    # 📊 Test JIRA integration
-npm run velocity        # 📈 Test analytics capabilities  
-npm run sprint-summary  # 📋 Test complete workflow
-# In VS Code Copilot: "validate configuration"
-```
-
-## 📋 **Requirements**
-
-### 🛠️ **Development Environment**
-- **Node.js 18+** - Runtime environment
-- **TypeScript 5+** - Language and compiler
-- **VS Code + GitHub Copilot** - Recommended development setup
-
-### 🔑 **API Access**  
-- **JIRA Cloud** - Sprint and issue management
-- **GitHub** - Repository and commit access
-- **Confluence Cloud** (optional) - Documentation publishing
-- **Microsoft Teams** (optional) - Team notifications
-
-## 🤝 **Contributing**
-
-1. **Fork the repository** and clone your fork
-2. **Create feature branch**: `git checkout -b feature/amazing-feature`
-3. **Follow the docs structure**: Add documentation to appropriate `docs/` subdirectory
-4. **Test your changes**: Use validation commands to ensure functionality
-5. **Commit changes**: `git commit -m 'feat: add amazing feature'`
-6. **Push to branch**: `git push origin feature/amazing-feature`
-7. **Open Pull Request** with clear description
-
-## 📄 **License**
-
-This project is licensed under the **MIT License** - see the LICENSE file for details.
 
 ## 🆘 **Support & Troubleshooting**
 
