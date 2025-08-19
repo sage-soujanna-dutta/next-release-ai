@@ -22,6 +22,24 @@ export interface JiraIssue {
     components?: Array<{
       name: string;
     }>;
+    customfield_10004?: number; // Story Points (common JIRA field)
+    customfield_10002?: number; // Alternative Story Points field  
+    customfield_10003?: number; // Another Story Points field
+    customfield_10005?: number; // Another Story Points field
+    storyPoints?: number; // Normalized story points field
+    epic?: {
+      key: string;
+      name: string;
+    };
+    parent?: {
+      key: string;
+      fields: {
+        summary: string;
+        issuetype: {
+          name: string;
+        };
+      };
+    };
   };
 }
 
@@ -46,6 +64,32 @@ export class JiraService {
 
     if (!this.domain || !this.token || !this.boardId) {
       throw new Error("Missing required JIRA environment variables");
+    }
+  }
+
+  /**
+   * Generic method to make JIRA API requests
+   */
+  async makeRequest(endpoint: string, method: 'GET' | 'POST' | 'PUT' | 'DELETE' = 'GET', data?: any): Promise<any> {
+    try {
+      const url = `https://${this.domain}${endpoint}`;
+      const response = await axios({
+        url,
+        method,
+        headers: {
+          Authorization: `Bearer ${this.token}`,
+          Accept: "application/json",
+          "Content-Type": "application/json",
+        },
+        data
+      });
+
+      return response.data;
+    } catch (error: any) {
+      if (error.response) {
+        throw new Error(`JIRA API Error: ${error.response.status} - ${error.response.data?.errorMessages?.join(', ') || error.response.statusText}`);
+      }
+      throw new Error(`JIRA Request Failed: ${error.message}`);
     }
   }
 
@@ -99,7 +143,26 @@ export class JiraService {
       } while (allIssues.length < total);
 
       console.log(`✅ Successfully fetched all ${allIssues.length} issues for sprint ${sprintNumber}`);
-      return allIssues;
+      
+      // Process story points - normalize the field
+      const processedIssues = allIssues.map(issue => {
+        // Common story points field names in JIRA
+        const storyPoints = issue.fields.customfield_10004 || 
+                           issue.fields.customfield_10002 || 
+                           issue.fields.customfield_10005 || 
+                           issue.fields.customfield_10003 || 
+                           0;
+        
+        return {
+          ...issue,
+          fields: {
+            ...issue.fields,
+            storyPoints: storyPoints
+          }
+        };
+      });
+      
+      return processedIssues;
     } catch (error) {
       console.error("Error fetching JIRA issues:", error);
       throw new Error(`Failed to fetch JIRA issues: ${error instanceof Error ? error.message : "Unknown error"}`);
@@ -137,6 +200,184 @@ export class JiraService {
     } catch (error) {
       console.error("Error fetching sprint details:", error);
       throw new Error(`Failed to fetch sprint details: ${error instanceof Error ? error.message : "Unknown error"}`);
+    }
+  }
+
+  // Calculate story points statistics for a sprint
+  calculateStoryPointsStats(issues: JiraIssue[]): {
+    totalStoryPoints: number;
+    completedStoryPoints: number;
+    completionRate: number;
+    byStatus: Record<string, number>;
+    byType: Record<string, number>;
+  } {
+    const totalStoryPoints = issues.reduce((sum, issue) => sum + (issue.fields.storyPoints || 0), 0);
+    const completedIssues = issues.filter(issue => issue.fields.status.name === 'Done');
+    const completedStoryPoints = completedIssues.reduce((sum, issue) => sum + (issue.fields.storyPoints || 0), 0);
+    
+    const byStatus = issues.reduce((acc, issue) => {
+      const status = issue.fields.status.name;
+      const points = issue.fields.storyPoints || 0;
+      acc[status] = (acc[status] || 0) + points;
+      return acc;
+    }, {} as Record<string, number>);
+
+    const byType = issues.reduce((acc, issue) => {
+      const type = issue.fields.issuetype.name;
+      const points = issue.fields.storyPoints || 0;
+      acc[type] = (acc[type] || 0) + points;
+      return acc;
+    }, {} as Record<string, number>);
+
+    return {
+      totalStoryPoints,
+      completedStoryPoints,
+      completionRate: totalStoryPoints > 0 ? Math.round((completedStoryPoints / totalStoryPoints) * 100) : 0,
+      byStatus,
+      byType
+    };
+  }
+
+  // Build JQL query from criteria object
+  buildJQLQuery(options: {
+    criteria: Record<string, any>;
+    orderBy?: string;
+    maxResults?: number;
+  }): string {
+    const { criteria, orderBy = 'created' } = options;
+    const jqlParts: string[] = [];
+
+    // Handle different criteria types
+    for (const [key, value] of Object.entries(criteria)) {
+      if (value === null || value === undefined) continue;
+
+      switch (key.toLowerCase()) {
+        case 'project':
+          jqlParts.push(`project = ${value}`);
+          break;
+        case 'sprint':
+          // Handle both sprint name and sprint number
+          if (typeof value === 'string' && value.includes('SCNT-')) {
+            jqlParts.push(`sprint = "${value}"`);
+          } else {
+            jqlParts.push(`sprint = ${value}`);
+          }
+          break;
+        case 'status':
+          if (Array.isArray(value)) {
+            jqlParts.push(`status IN (${value.map(s => `"${s}"`).join(', ')})`);
+          } else {
+            jqlParts.push(`status = "${value}"`);
+          }
+          break;
+        case 'assignee':
+          if (Array.isArray(value)) {
+            jqlParts.push(`assignee IN (${value.map(a => `"${a}"`).join(', ')})`);
+          } else {
+            jqlParts.push(`assignee = "${value}"`);
+          }
+          break;
+        case 'issuetype':
+        case 'type':
+          if (Array.isArray(value)) {
+            jqlParts.push(`issuetype IN (${value.map(t => `"${t}"`).join(', ')})`);
+          } else {
+            jqlParts.push(`issuetype = "${value}"`);
+          }
+          break;
+        case 'priority':
+          if (Array.isArray(value)) {
+            jqlParts.push(`priority IN (${value.map(p => `"${p}"`).join(', ')})`);
+          } else {
+            jqlParts.push(`priority = "${value}"`);
+          }
+          break;
+        case 'component':
+        case 'components':
+          if (Array.isArray(value)) {
+            jqlParts.push(`component IN (${value.map(c => `"${c}"`).join(', ')})`);
+          } else {
+            jqlParts.push(`component = "${value}"`);
+          }
+          break;
+        case 'created':
+          if (typeof value === 'object' && value.after) {
+            jqlParts.push(`created >= "${value.after}"`);
+          }
+          if (typeof value === 'object' && value.before) {
+            jqlParts.push(`created <= "${value.before}"`);
+          }
+          break;
+        case 'updated':
+          if (typeof value === 'object' && value.after) {
+            jqlParts.push(`updated >= "${value.after}"`);
+          }
+          if (typeof value === 'object' && value.before) {
+            jqlParts.push(`updated <= "${value.before}"`);
+          }
+          break;
+        default:
+          // For custom fields or unknown fields, try basic equality
+          if (typeof value === 'string') {
+            jqlParts.push(`${key} = "${value}"`);
+          } else if (typeof value === 'number') {
+            jqlParts.push(`${key} = ${value}`);
+          }
+          break;
+      }
+    }
+
+    let jql = jqlParts.join(' AND ');
+    
+    if (orderBy) {
+      jql += ` ORDER BY ${orderBy}`;
+    }
+
+    return jql;
+  }
+
+  // Fetch issues using JQL query
+  async fetchIssuesByJQL(jqlQuery: string): Promise<JiraIssue[]> {
+    try {
+      console.log(`🔍 Executing JQL Query: ${jqlQuery}`);
+      
+      const response = await axios.get(
+        `https://${this.domain}/rest/api/3/search`,
+        {
+          headers: {
+            Authorization: `Basic ${this.token}`,
+            Accept: "application/json",
+          },
+          params: {
+            jql: jqlQuery,
+            fields: "key,summary,status,issuetype,assignee,priority,components,customfield_10004,customfield_10002,customfield_10003,customfield_10005",
+            maxResults: 100
+          }
+        }
+      );
+
+      const issues: JiraIssue[] = response.data.issues.map((issue: any) => ({
+        key: issue.key,
+        fields: {
+          summary: issue.fields.summary,
+          status: issue.fields.status,
+          issuetype: issue.fields.issuetype,
+          assignee: issue.fields.assignee,
+          priority: issue.fields.priority,
+          components: issue.fields.components,
+          customfield_10004: issue.fields.customfield_10004,
+          customfield_10002: issue.fields.customfield_10002,
+          customfield_10003: issue.fields.customfield_10003,
+          customfield_10005: issue.fields.customfield_10005,
+          storyPoints: issue.fields.customfield_10004 || issue.fields.customfield_10002 || issue.fields.customfield_10003 || issue.fields.customfield_10005 || 0
+        }
+      }));
+
+      console.log(`✅ Found ${issues.length} issues matching the query`);
+      return issues;
+    } catch (error) {
+      console.error("Error executing JQL query:", error);
+      throw new Error(`Failed to execute JQL query: ${error instanceof Error ? error.message : "Unknown error"}`);
     }
   }
 }

@@ -25,8 +25,8 @@ export class FileService {
       const extension = isHtml ? 'html' : 'md';
       
       const fileName = sprintNumber 
-        ? `release-notes-${sprintNumber}-${date}-${time}.${extension}`
-        : `release-notes-${date}-${time}.${extension}`;
+        ? `${sprintNumber}-sprint-report-${date}-${time}.${extension}`
+        : `sprint-report-${date}-${time}.${extension}`;
       
       const filePath = path.join(this.outputDir, fileName);
       
@@ -45,8 +45,8 @@ export class FileService {
     try {
       const date = new Date().toISOString().split("T")[0];
       const fileName = sprintNumber 
-        ? `release-notes-sprint-${sprintNumber}-${date}.md`
-        : `release-notes-${date}.md`;
+        ? `${sprintNumber}-sprint-report-${date}.md`
+        : `sprint-report-${date}.md`;
       
       const filePath = path.join(this.outputDir, fileName);
       
@@ -72,7 +72,7 @@ export class FileService {
   async listReleaseNotes(): Promise<string[]> {
     try {
       const files = fs.readdirSync(this.outputDir);
-      return files.filter(file => file.startsWith("release-notes-"));
+      return files.filter(file => file.includes("sprint-report") || file.startsWith("release-notes-"));
     } catch (error) {
       console.error("Error listing release notes:", error);
       return [];

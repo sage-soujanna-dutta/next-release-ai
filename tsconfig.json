@@ -12,8 +12,13 @@
     "declaration": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "lib": ["ES2022", "DOM"],
+    "downlevelIteration": true
   },
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "dist", "scripts"]
+  "exclude": [
+    "node_modules", 
+    "dist"
+  ]
 }

@@ -1,9 +1,0 @@
-{
-  "mcpServers": {
-    "release-notes": {
-      "command": "node",
-      "args": ["dist/index.js"],
-      "cwd": "/path/to/your/release-mcp-server"
-    }
-  }
-}
